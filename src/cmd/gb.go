@@ -44,6 +44,13 @@ type Master struct {
 //Workers pointers are stored in m.workers to check the end of
 //work for each one.
 func (m *Master) BenchMark() {
+	
+	defer func(){
+		if err:= recover(); err != nil {
+			log.Print("Worker died")
+		}
+	}()
+	
 	// starts the sumarize reoutine.
 	go m.Sumarize()
 	m.workers = map[*Worker]Worker{}
@@ -81,8 +88,9 @@ func (m *Master) Sumarize() {
 
 		avg = (result.avg + avg) / 2
 		totalSuc += result.sucCount
+		totalErr += result.errCount
 
-		//if workers
+		//if workers still working
 		if len(m.workers) == 0 {
 			end = time.Nanoseconds()
 			break
