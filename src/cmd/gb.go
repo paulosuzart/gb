@@ -33,12 +33,16 @@ func main() {
 
 }
 
+//Represents this master.
 type Master struct {
 	monitor  chan *workSumary
 	ctrlChan chan bool
 	workers  map[*Worker]Worker
 }
 
+//For each client passed by arg, a new worker is created.
+//Workers pointers are stored in m.workers to check the end of
+//work for each one.
 func (m *Master) BenchMark() {
 	// starts the sumarize reoutine.
 	go m.Sumarize()
@@ -61,13 +65,15 @@ func (m *Master) BenchMark() {
 
 }
 
+//Read back the workSumary of each worker.
+//Calculates the average response time and total time for the
+//whole request.
 func (m *Master) Sumarize() {
 	var start, end int64
 	start = time.Nanoseconds()
 	var avg float64 = 0
 	totalSuc := 0
 	totalErr := 0
-	//totalReqs := *concurrent * *requests
 
 	for result := range m.monitor {
 		//remove the worker from master
