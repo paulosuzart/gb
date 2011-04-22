@@ -44,13 +44,6 @@ type Master struct {
 //Workers pointers are stored in m.workers to check the end of
 //work for each one.
 func (m *Master) BenchMark() {
-	
-	defer func(){
-		if err:= recover(); err != nil {
-			log.Print("Worker died")
-		}
-	}()
-	
 	// starts the sumarize reoutine.
 	go m.Sumarize()
 	m.workers = map[*Worker]Worker{}
@@ -123,6 +116,12 @@ type Worker struct {
 
 // put the avg response time for the executor.
 func (w *Worker) Execute() {
+	defer func(){
+		if err:= recover(); err != nil {
+			log.Print("Worker died")
+		}
+	}()
+	
 	var totalElapsed float64
 	totalErr := 0
 	totalSuc := 0
