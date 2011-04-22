@@ -1,0 +1,19 @@
+gb is a stress test tool based on Apache Benchmark.
+
+
+To run it just:
+
+gb -t http://localhost:8089 -c 2 -n 100
+
+It will start two Workers to request 100 times each.
+
+Available parameters by now are:
+-t target. It may change, bu represents the target http server.
+-c concurrent. Number of clients to perform the requests.
+-n requests. Number of request each client should perform.
+
+Licencing?
+
+None yet.
+
+paulosuzart@gmail.com
