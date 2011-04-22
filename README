@@ -25,3 +25,10 @@ Licencing?
 None yet.
 
 paulosuzart@gmail.com
+
+
+TODO
+.Websocket to report in real time the status of request. A browser will be
+welcome.
+.Timeout for workers and Master
+.Distribute workers using a worker mode for gb.
