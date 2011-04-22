@@ -1,9 +1,17 @@
-gb is a stress test tool based on Apache Benchmark.
+gb is a stress test tool based on Apache Benchmark. It has zero dependencies, so you should be able to build the projet and start using it.
 
 
-To run it just:
+Running gb:
 
-gb -t http://localhost:8089 -c 2 -n 100
+ ./gb -t http://localhost:8089 -c 2 -n 100
+
+the output should be something like:
+
+   2011/04/22 00:38:29 Starting requests...
+   2011/04/22 00:38:29 Total Go Benchmark time 157 miliseconds.
+   2011/04/22 00:38:29 200 requests performed. Average response time 0.8225 miliseconds.
+   2011/04/22 00:38:29 0 requests lost.
+   2011/04/22 00:38:29 Job done.
 
 It will start two Workers to request 100 times each.
 
