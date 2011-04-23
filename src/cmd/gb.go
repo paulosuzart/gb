@@ -47,16 +47,18 @@ func (m *Master) BenchMark() {
 	// starts the sumarize reoutine.
 	go m.Sumarize()
 	m.workers = map[*Worker]Worker{}
+	
 	for c := 0; c < *concurrent; c++ {
-
+	
 		//create a new Worker	
-		w := &Worker{
-			httpClient: new(http.Client),
-			resultChan: m.monitor,
-			work:       perform,
-			requests:   *requests,
-		}
-		m.workers[w] = *w
+		var w Worker
+		w. httpClient = new(http.Client)
+		w.resultChan = m.monitor
+		w.work = perform
+		w.requests = *requests
+		
+		m.workers[&w] = w
+		
 		// a go for the Worker
 		go w.Execute()
 		// #TODO if a worker get stuck it will never send back the result
@@ -135,22 +137,27 @@ func (w *Worker) Execute() {
 			totalErr += 1
 		}
 	}
-	w.resultChan <- &workSumary{
-		errCount: totalErr,
-		sucCount: totalSuc,
-		avg:      totalElapsed / float64(totalSuc),
-		Worker:   w,
-	}
+	
+	var sumary workSumary
+	sumary.errCount = totalErr
+	sumary.sucCount = totalSuc
+	sumary.avg = totalElapsed/float64(totalSuc)
+	sumary.Worker = w
+
+	w.resultChan <- &sumary
+
 }
 
-func perform(client *http.Client) (float64, os.Error) {
+func perform(client *http.Client) (r float64, err os.Error) {
 	start := time.Nanoseconds()
 
 	resp, _, err := client.Get(*target)
-	if err != nil || resp.StatusCode != http.StatusOK {
+
+	if err != nil || resp.StatusCode != http.StatusOK || resp.StatusCode != http.StatusUnauthorized {
 		log.Print(err.String())
 		return 0, err
 	}
+	
 	end := time.Nanoseconds()
 	total := float64((end - start) / 1000000)
 
