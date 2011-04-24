@@ -1,17 +1,21 @@
 package main
 
 import (
-	"http"
 	"log"
 	"time"
 	"flag"
 	"os"
+	"github.com/paulosuzart/gb/gbclient"
+	"strings"
 )
 
 var (
 	concurrent = flag.Int("c", 1, "Number of concurrent users emulated. Default 1.")
 	requests   = flag.Int("n", 1, "Number of total request to be performed. Default 1.")
 	target     = flag.String("t", "http://localhost:8089", "Target to perform the workload.")
+	unamePass  = flag.String("A", "", "auth-name:password")
+	uname      = ""
+	passwd     = ""
 )
 
 
@@ -20,6 +24,12 @@ var (
 func main() {
 	flag.Parse()
 	log.Print("Starting requests...")
+
+	authData := strings.Split(*unamePass, ":", 1)
+	if len(authData) == 2 {
+		uname = authData[0]
+		passwd = authData[1]
+	}
 
 	master := &Master{
 		monitor:  make(chan *workSumary),
@@ -47,18 +57,19 @@ func (m *Master) BenchMark() {
 	// starts the sumarize reoutine.
 	go m.Sumarize()
 	m.workers = map[*Worker]Worker{}
-	
+
 	for c := 0; c < *concurrent; c++ {
-	
+
 		//create a new Worker	
 		var w Worker
-		w. httpClient = new(http.Client)
+		w.httpClient = gbclient.NewHTTPClient(*target, "GET")
+		w.httpClient.Auth(uname, passwd)
 		w.resultChan = m.monitor
 		w.work = perform
 		w.requests = *requests
-		
+
 		m.workers[&w] = w
-		
+
 		// a go for the Worker
 		go w.Execute()
 		// #TODO if a worker get stuck it will never send back the result
@@ -110,20 +121,21 @@ type workSumary struct {
 
 //A worker
 type Worker struct {
-	work       func(*http.Client) (float64, os.Error)
+	work       func(*gbclient.HTTPClient) (float64, os.Error)
 	resultChan chan *workSumary
-	httpClient *http.Client
+	httpClient *gbclient.HTTPClient
 	requests   int
 }
 
 // put the avg response time for the executor.
 func (w *Worker) Execute() {
-	defer func(){
-		if err:= recover(); err != nil {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println(err)
 			log.Print("Worker died")
 		}
 	}()
-	
+
 	var totalElapsed float64
 	totalErr := 0
 	totalSuc := 0
@@ -137,29 +149,29 @@ func (w *Worker) Execute() {
 			totalErr += 1
 		}
 	}
-	
+
 	var sumary workSumary
 	sumary.errCount = totalErr
 	sumary.sucCount = totalSuc
-	sumary.avg = totalElapsed/float64(totalSuc)
+	sumary.avg = totalElapsed / float64(totalSuc)
 	sumary.Worker = w
 
 	w.resultChan <- &sumary
 
 }
 
-func perform(client *http.Client) (r float64, err os.Error) {
+func perform(c *gbclient.HTTPClient) (r float64, err os.Error) {
 	start := time.Nanoseconds()
 
-	resp, _, err := client.Get(*target)
+	_, err = c.DoRequest()
 
-	if err != nil || resp.StatusCode != http.StatusOK || resp.StatusCode != http.StatusUnauthorized {
-		log.Print(err.String())
+	if err != nil {
+		log.Println(err.String())
 		return 0, err
 	}
-	
-	end := time.Nanoseconds()
-	total := float64((end - start) / 1000000)
 
-	return total, nil
+	end := time.Nanoseconds()
+	r = float64((end - start) / 1000000)
+
+	return
 }
