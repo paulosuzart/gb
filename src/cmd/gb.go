@@ -11,8 +11,8 @@ import (
 var (
 	concurrent = flag.Int("c", 1, "Number of concurrent users emulated. Default 1.")
 	requests   = flag.Int("n", 1, "Number of total request to be performed. Default 1.")
-	target     = flag.String("t", "http://localhost:8084/api/track/twitter/mentions", "Target to perform the workload.")
-	unamePass  = flag.String("A", "teste:teste", "auth-name:password")
+	target     = flag.String("t", "http://localhost:8089", "Target to perform the workload.")
+	unamePass  = flag.String("A", "", "auth-name:password")
 	uname      = ""
 	passwd     = ""
 	basicAuth  = false
@@ -142,6 +142,7 @@ func (w *Worker) Execute() {
 		if err := recover(); err != nil {
 			log.Println(err)
 			log.Print("Worker died")
+			w.resultChan <- &workSumary {Worker : w}
 		}
 	}()
 
