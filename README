@@ -20,13 +20,15 @@ Available parameters by now are:
 -c concurrent. Number of clients to perform the requests.
 -n requests. Number of request each client should perform.
 -A username:password. For Http Basic Authentication.
+
+===========
 Licencing?
 
 None yet.
 
 paulosuzart@gmail.com
 
-
+===========
 TODO
 .Websocket to report in real time the status of request. A browser will be
 welcome.
