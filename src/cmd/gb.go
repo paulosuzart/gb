@@ -4,7 +4,6 @@ import (
 	"log"
 	"time"
 	"flag"
-	"os"
 	"github.com/paulosuzart/gb/gbclient"
 	"strings"
 )
@@ -12,10 +11,11 @@ import (
 var (
 	concurrent = flag.Int("c", 1, "Number of concurrent users emulated. Default 1.")
 	requests   = flag.Int("n", 1, "Number of total request to be performed. Default 1.")
-	target     = flag.String("t", "http://localhost:8089", "Target to perform the workload.")
-	unamePass  = flag.String("A", "", "auth-name:password")
+	target     = flag.String("t", "http://localhost:8084/api/track/twitter/mentions", "Target to perform the workload.")
+	unamePass  = flag.String("A", "teste:teste", "auth-name:password")
 	uname      = ""
 	passwd     = ""
+	basicAuth  = false
 )
 
 
@@ -25,14 +25,15 @@ func main() {
 	flag.Parse()
 	log.Print("Starting requests...")
 
-	authData := strings.Split(*unamePass, ":", 1)
+	authData := strings.Split(*unamePass, ":", 2)
 	if len(authData) == 2 {
 		uname = authData[0]
 		passwd = authData[1]
+		basicAuth = true
 	}
 
 	master := &Master{
-		monitor:  make(chan *workSumary),
+		monitor:  make(chan *workSumary, 10),
 		ctrlChan: make(chan bool),
 	}
 	master.BenchMark()
@@ -63,9 +64,11 @@ func (m *Master) BenchMark() {
 		//create a new Worker	
 		var w Worker
 		w.httpClient = gbclient.NewHTTPClient(*target, "GET")
-		w.httpClient.Auth(uname, passwd)
+
+		if basicAuth {
+			w.httpClient.Auth(uname, passwd)
+		}
 		w.resultChan = m.monitor
-		w.work = perform
 		w.requests = *requests
 
 		m.workers[&w] = w
@@ -83,11 +86,11 @@ func (m *Master) BenchMark() {
 //whole request.
 func (m *Master) Sumarize() {
 	var start, end int64
-	start = time.Nanoseconds()
 	var avg float64 = 0
 	totalSuc := 0
 	totalErr := 0
 
+	start = time.Nanoseconds()
 	for result := range m.monitor {
 		//remove the worker from master
 		m.workers[result.Worker] = m.workers[result.Worker], false
@@ -96,7 +99,7 @@ func (m *Master) Sumarize() {
 		totalSuc += result.sucCount
 		totalErr += result.errCount
 
-		//if workers still working
+		//if no workers left 
 		if len(m.workers) == 0 {
 			end = time.Nanoseconds()
 			break
@@ -113,18 +116,24 @@ func (m *Master) Sumarize() {
 
 //Reported by the worker through resultChan
 type workSumary struct {
-	errCount int
-	sucCount int
-	avg      float64
-	Worker   *Worker
+	errCount int     //total errors
+	sucCount int     //total success
+	avg      float64 //average response time
+	Worker   *Worker //given worker
 }
 
 //A worker
 type Worker struct {
-	work       func(*gbclient.HTTPClient) (float64, os.Error)
+	//The work summary is sent to the master through
+	//this channel
 	resultChan chan *workSumary
+
+	//The actual gbclient.HTTPClient to which compute 
+	//the request time
 	httpClient *gbclient.HTTPClient
-	requests   int
+
+	//Number of requests to be performed
+	requests int
 }
 
 // put the avg response time for the executor.
@@ -136,12 +145,15 @@ func (w *Worker) Execute() {
 		}
 	}()
 
-	var totalElapsed float64
+	var totalElapsed int64
 	totalErr := 0
 	totalSuc := 0
 
+	//perform w.request times the request
 	for i := 0; i < w.requests; i++ {
-		elapsed, err := w.work(w.httpClient)
+		start := time.Nanoseconds()
+		_, err := w.httpClient.DoRequest()
+		elapsed := (time.Nanoseconds() - start)
 		if err == nil {
 			totalSuc += 1
 			totalElapsed += elapsed
@@ -153,25 +165,9 @@ func (w *Worker) Execute() {
 	var sumary workSumary
 	sumary.errCount = totalErr
 	sumary.sucCount = totalSuc
-	sumary.avg = totalElapsed / float64(totalSuc)
+	sumary.avg = float64(totalElapsed / int64(totalSuc))
 	sumary.Worker = w
 
 	w.resultChan <- &sumary
 
-}
-
-func perform(c *gbclient.HTTPClient) (r float64, err os.Error) {
-	start := time.Nanoseconds()
-
-	_, err = c.DoRequest()
-
-	if err != nil {
-		log.Println(err.String())
-		return 0, err
-	}
-
-	end := time.Nanoseconds()
-	r = float64((end - start) / 1000000)
-
-	return
 }
