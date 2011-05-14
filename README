@@ -20,6 +20,9 @@ Available parameters by now are:
 -c concurrent. Number of clients to perform the requests.
 -n requests. Number of request each client should perform.
 -A username:password. For Http Basic Authentication.
+-M mode: standalone, master, worker.
+-H host: Master host. Used for distributed gb in master mode.
+-W worker host: Worker Host. Used for distributed gb in worker mode. 
 
 ===========
 Licencing?
@@ -33,4 +36,4 @@ TODO
 .Websocket to report in real time the status of request. A browser will be
 welcome.
 .Timeout for workers and Master
-.Distribute workers using a worker mode for gb.
+.Distribute workers using a worker mode for gb. DONE!
