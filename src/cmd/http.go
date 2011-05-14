@@ -1,5 +1,4 @@
-//Groups http client related abstractions
-package gbclient
+package main
 
 
 import (
@@ -12,7 +11,6 @@ import (
 const (
 	DEFAULT_VERB = "GET"
 )
-
 
 
 //Hold information about how to connect and
@@ -50,6 +48,7 @@ func (c *HTTPClient) Auth(usr, passwd string) {
 }
 
 type Error string
+
 func (e Error) String() string {
 	return string(e)
 }
@@ -64,8 +63,7 @@ func (c *HTTPClient) DoRequest() (response *http.Response, err os.Error) {
 			log.Panic(err)
 		}
 	}()
-	
-	
+
 	response, _, err = c.client.Get(c.Addr)
 
 	if err != nil {
@@ -80,10 +78,10 @@ func (c *HTTPClient) DoRequest() (response *http.Response, err os.Error) {
 
 		srcs := []byte(c.User + ": " + c.Password)
 		dsts := make([]byte, base64.StdEncoding.EncodedLen(len(srcs)))
-		
+
 		base64.StdEncoding.Encode(dsts, srcs)
 
-		h.Add("Authorization", "Basic " + string(dsts))
+		h.Add("Authorization", "Basic "+string(dsts))
 
 		req.Header = h
 		req.Method = "GET"
@@ -94,7 +92,7 @@ func (c *HTTPClient) DoRequest() (response *http.Response, err os.Error) {
 		_, err = c.client.Do(req)
 
 		if err != nil {
-			log.Println("ERR")
+			log.Println(err)
 			return
 		}
 

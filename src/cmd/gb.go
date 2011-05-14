@@ -4,8 +4,9 @@ import (
 	"log"
 	"time"
 	"flag"
-	"github.com/paulosuzart/gb/gbclient"
+	//	"github.com/paulosuzart/gb/gbclient"
 	"strings"
+	"netchan"
 )
 
 var (
@@ -13,32 +14,62 @@ var (
 	requests   = flag.Int("n", 1, "Number of total request to be performed. Default 1.")
 	target     = flag.String("t", "http://localhost:8089", "Target to perform the workload.")
 	unamePass  = flag.String("A", "", "auth-name:password")
-	uname      = ""
-	passwd     = ""
 	basicAuth  = false
+	mode       = flag.String("M", "standalone", "standalone, master, worker")
+	workerAddr = flag.String("W", "localhost:9397", "The worker Addr")
+	masterAddr = flag.String("H", "localhost:9393", "The master Addr")
 )
 
+func parseCredentials() (u, p string) {
+	if *unamePass == "" {
+		return
+	}
+	authData := strings.Split(*unamePass, ":", 2)
+
+	if len(authData) != 2 {
+		log.Fatal("No valid credentials found in -A argument")
+	}
+	u = authData[0]
+	p = authData[1]
+	return
+}
+
+func main() {
+
+	flag.Parse()
+
+	if *mode == "master" || *mode == "standalone" {
+		startMaster()
+	} else if *mode == "worker" {
+		startWorker()
+	}
+}
+
+
+func startWorker() {
+	log.Print("Starting worker...")
+	NewLocalWorker(true, *workerAddr)
+}
 
 //Starts concurrent number of workers and waits for everyone terminate. 
 //Computes the average time and log it.
-func main() {
-	flag.Parse()
-	log.Print("Starting requests...")
+func startMaster() {
 
-	authData := strings.Split(*unamePass, ":", 2)
-	if len(authData) == 2 {
-		uname = authData[0]
-		passwd = authData[1]
-		basicAuth = true
+	log.Print("Starting Master...")
+	masterChan := make(chan WorkSummary, 10)
+	if *mode == "master" {
+		e := netchan.NewExporter()
+		e.Export("masterChannel", masterChan, netchan.Recv)
+		e.ListenAndServe("tcp", *masterAddr)
 	}
 
 	master := &Master{
-		monitor:  make(chan *workSumary, 10),
+		channel:  masterChan,
 		ctrlChan: make(chan bool),
 	}
 	master.BenchMark()
 
-	//wait for the workers to complete after sumarize
+	//wait for the workers to complete after summarize
 	<-master.ctrlChan
 	log.Printf("Job done.")
 
@@ -46,9 +77,9 @@ func main() {
 
 //Represents this master.
 type Master struct {
-	monitor  chan *workSumary
+	channel  chan WorkSummary
 	ctrlChan chan bool
-	workers  map[*Worker]Worker
+	workers  int
 }
 
 //For each client passed by arg, a new worker is created.
@@ -57,26 +88,29 @@ type Master struct {
 func (m *Master) BenchMark() {
 	// starts the sumarize reoutine.
 	go m.Sumarize()
-	m.workers = map[*Worker]Worker{}
 
 	for c := 0; c < *concurrent; c++ {
 
 		//create a new Worker	
 		var w Worker
-		w.httpClient = gbclient.NewHTTPClient(*target, "GET")
 
-		if basicAuth {
-			w.httpClient.Auth(uname, passwd)
+		if *mode == "master" {
+			w = NewProxyWorker(*workerAddr)
+		} else if *mode == "standalone" {
+			w = NewLocalWorker(false, "")
 		}
-		w.resultChan = m.monitor
-		w.requests = *requests
 
-		m.workers[&w] = w
+		var t *Task = new(Task)
+		t.Host = *target
+		t.Requests = *requests
+		t.MasterAddr = *masterAddr
+		t.User, t.Password = parseCredentials()
 
-		// a go for the Worker
-		go w.Execute()
+		m.workers += 1
+
 		// #TODO if a worker get stuck it will never send back the result
 		// we need a timout for every worker.
+		t.Send(w)
 	}
 
 }
@@ -85,22 +119,22 @@ func (m *Master) BenchMark() {
 //Calculates the average response time and total time for the
 //whole request.
 func (m *Master) Sumarize() {
+	log.Print("Tasks distributed. Waiting for summaries...")
 	var start, end int64
 	var avg float64 = 0
 	totalSuc := 0
 	totalErr := 0
 
 	start = time.Nanoseconds()
-	for result := range m.monitor {
+	for result := range m.channel {
 		//remove the worker from master
-		m.workers[result.Worker] = m.workers[result.Worker], false
-
-		avg = (result.avg + avg) / 2
-		totalSuc += result.sucCount
-		totalErr += result.errCount
+		m.workers -= 1
+		avg = (result.Avg + avg) / 2
+		totalSuc += result.SucCount
+		totalErr += result.ErrCount
 
 		//if no workers left 
-		if len(m.workers) == 0 {
+		if m.workers == 0 {
 			end = time.Nanoseconds()
 			break
 		}
@@ -111,64 +145,5 @@ func (m *Master) Sumarize() {
 	log.Printf("%v requests performed. Average response time %v miliseconds.", totalSuc, avg)
 	log.Printf("%v requests lost.", totalErr)
 	m.ctrlChan <- true
-
-}
-
-//Reported by the worker through resultChan
-type workSumary struct {
-	errCount int     //total errors
-	sucCount int     //total success
-	avg      float64 //average response time
-	Worker   *Worker //given worker
-}
-
-//A worker
-type Worker struct {
-	//The work summary is sent to the master through
-	//this channel
-	resultChan chan *workSumary
-
-	//The actual gbclient.HTTPClient to which compute 
-	//the request time
-	httpClient *gbclient.HTTPClient
-
-	//Number of requests to be performed
-	requests int
-}
-
-// put the avg response time for the executor.
-func (w *Worker) Execute() {
-	defer func() {
-		if err := recover(); err != nil {
-			log.Println(err)
-			log.Print("Worker died")
-			w.resultChan <- &workSumary {Worker : w}
-		}
-	}()
-
-	var totalElapsed int64
-	totalErr := 0
-	totalSuc := 0
-
-	//perform w.request times the request
-	for i := 0; i < w.requests; i++ {
-		start := time.Nanoseconds()
-		_, err := w.httpClient.DoRequest()
-		elapsed := (time.Nanoseconds() - start)
-		if err == nil {
-			totalSuc += 1
-			totalElapsed += elapsed
-		} else {
-			totalErr += 1
-		}
-	}
-
-	var sumary workSumary
-	sumary.errCount = totalErr
-	sumary.sucCount = totalSuc
-	sumary.avg = float64(totalElapsed / int64(totalSuc))
-	sumary.Worker = w
-
-	w.resultChan <- &sumary
 
 }
