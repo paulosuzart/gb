@@ -24,8 +24,8 @@ func (t *Task) Send(w Worker) {
 //The worker interface
 type Worker interface {
 	//Should return the input channel to
-        //interact with Worker
-        Channel() chan Task
+	//interact with Worker
+	Channel() chan Task
 }
 
 
@@ -33,8 +33,8 @@ type Worker interface {
 //as well as in worker mode.
 type LocalWorker struct {
 	//the Worker input channel to
-        //receve tasks
-        channel chan Task
+	//receve tasks
+	channel chan Task
 }
 
 //Creates a new LocalWorker. If export is true, than
