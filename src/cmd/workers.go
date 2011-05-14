@@ -7,6 +7,8 @@ import (
 	"fmt"
 )
 
+//Represents a set of request to be performed
+//against Task.Host        
 type Task struct {
 	Host, User, Password string
 	BasicAuth            bool
@@ -14,23 +16,30 @@ type Task struct {
 	MasterAddr           string
 }
 
+//Put t to w.Channel()        
 func (t *Task) Send(w Worker) {
 	w.Channel() <- *t
 }
 
-func (t *Task) String() string {
-	return fmt.Sprintf("Host: %s\nUser: %s\nPassword: %s\nMasterAddr: %s", t.Host, t.User, t.Password, t.MasterAddr)
-}
-
+//The worker interface
 type Worker interface {
-	Channel() chan Task
+	//Should return the input channel to
+        //interact with Worker
+        Channel() chan Task
 }
 
 
+//A local workers is used in standalone mode
+//as well as in worker mode.
 type LocalWorker struct {
-	channel chan Task
+	//the Worker input channel to
+        //receve tasks
+        channel chan Task
 }
 
+//Creates a new LocalWorker. If export is true, than
+//the LocalWorker exports its input channel in the network address
+//provided by workerAddr        
 func NewLocalWorker(export bool, workerAddr string) (w *LocalWorker) {
 	log.Print("Setting up a Localworker...")
 	w = new(LocalWorker)
@@ -46,6 +55,8 @@ func NewLocalWorker(export bool, workerAddr string) (w *LocalWorker) {
 	return
 }
 
+//Holds a reference to an imported channel
+//from the actual worker
 type ProxyWorker struct {
 	channel chan Task
 }
@@ -58,6 +69,8 @@ func (l *LocalWorker) Channel() chan Task {
 	return l.channel
 }
 
+//Creates a new Proxy importing 'workerChannel' from Worker running
+//on workerAddr        
 func NewProxyWorker(workerAddr string) (p *ProxyWorker) {
 	log.Print("Setting up a ProxyWorker")
 	p = new(ProxyWorker)
@@ -68,6 +81,7 @@ func NewProxyWorker(workerAddr string) (p *ProxyWorker) {
 }
 
 
+//Helper function to import the Master channel from masterAddr
 func importMasterChan(masterAddr string) (c chan WorkSummary) {
 	imp, _ := netchan.Import("tcp", masterAddr)
 	c = make(chan WorkSummary, 10)
