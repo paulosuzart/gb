@@ -17,15 +17,20 @@ var (
 )
 
 //Creates a serie of workers regarding the gb mode
-func getWorkers(mode *string) (workers []Worker) {
+//for the given master
+func getWorkers(master *Master) (workers []Worker) {
 	var wtype string
-	if *mode == "standalone" {
+	createLocalWorkers := func() {
 		wtype = "Local"
 		workers = make([]Worker, *concurrent)
 		for c := 0; c < *concurrent; c++ {
-			workers[c] = NewLocalWorker(mode, nil)
+			wk := NewLocalWorker(master.mode, nil)
+			wk.SetMasterChan(master.channel)
+			workers[c] = wk
 		}
-	} else if *mode == "master" {
+
+	}
+	createProxyWorkers := func() {
 		wtype = "Proxy"
 		addrs := strings.Split(*workersAddrs, ",", -1)
 		workers = make([]Worker, len(addrs))
@@ -39,7 +44,14 @@ func getWorkers(mode *string) (workers []Worker) {
 			workers[i] = wk
 		}
 	}
-	log.Printf("%v %vWorkers will be used by gb", len(workers), wtype)
+
+	switch *master.mode {
+	case "standalone":
+		createLocalWorkers()
+	case "master":
+		createProxyWorkers()
+	}
+	log.Printf("%v %vWorker(s) may be used by gb", len(workers), wtype)
 	return
 
 }
@@ -105,7 +117,7 @@ func (m *Master) BenchMark() {
 		return
 	}
 
-	workers := getWorkers(m.mode)
+	workers := getWorkers(m)
 	load := *concurrent / len(workers)
 	remain := *concurrent % len(workers)
 	for _, w := range workers {
@@ -154,5 +166,4 @@ func (m *Master) Summarize() {
 	log.Printf("%v requests performed. Average response time %v miliseconds.", totalSuc, avg)
 	log.Printf("%v requests lost.", totalErr)
 	m.ctrlChan <- true
-
 }
