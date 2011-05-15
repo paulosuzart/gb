@@ -15,11 +15,12 @@ var (
 func main() {
 	flag.Parse()
 	log.Printf("Starting in %s mode", *mode)
-	if *mode == "master" || *mode == "standalone" {
+	switch *mode {
+	case "master", "standalone":
 		m := NewMaster(mode, hostAddr)
 		m.BenchMark()
 		<-m.ctrlChan
-	} else if *mode == "worker" {
+	case "worker":
 		w := NewLocalWorker(mode, hostAddr)
 		<-w.ctrlChan
 	}
