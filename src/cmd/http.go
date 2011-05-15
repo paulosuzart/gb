@@ -71,7 +71,6 @@ func (c *HTTPClient) DoRequest() (response *http.Response, err os.Error) {
 		return nil, err
 	}
 
-	log.Print(c.basicAuth)
 	if response.StatusCode == http.StatusUnauthorized && c.basicAuth {
 		var req *http.Request = new(http.Request)
 		var h http.Header = map[string][]string{}

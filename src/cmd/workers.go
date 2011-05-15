@@ -4,6 +4,7 @@ import (
 	"log"
 	"netchan"
 	"time"
+	"os"
 )
 
 //Represents a set of request to be performed
@@ -14,6 +15,14 @@ type Task struct {
 	Requests, Id         int
 	MasterAddr           string
 }
+
+//Reported by the worker through resultChan
+type WorkSummary struct {
+	ErrCount int     //total errors
+	SucCount int     //total success
+	Avg      float64 //average response time
+}
+
 
 //Put t to w.Channel()        
 func (t *Task) Send(w Worker) {
@@ -36,19 +45,28 @@ type LocalWorker struct {
 	channel chan Task
 }
 
+func (p *ProxyWorker) Channel() chan Task {
+	return p.channel
+}
+
+func (l *LocalWorker) Channel() chan Task {
+	return l.channel
+}
+
+
 //Creates a new LocalWorker. If export is true, than
 //the LocalWorker exports its input channel in the network address
 //provided by workerAddr        
-func NewLocalWorker(export bool, workerAddr string) (w *LocalWorker) {
+func NewLocalWorker(mode, hostAddr *string) (w *LocalWorker) {
 	log.Print("Setting up a Localworker...")
 	w = new(LocalWorker)
-	w.channel = make(chan Task)
+	w.channel = make(chan Task, 10)
 
 	//exports the channels
-	if export {
+	if *mode == "worker" {
 		e := netchan.NewExporter()
 		e.Export("workerChannel", w.channel, netchan.Recv)
-		e.ListenAndServe("tcp", workerAddr)
+		e.ListenAndServe("tcp", *hostAddr)
 	}
 	w.start()
 	return
@@ -60,50 +78,45 @@ type ProxyWorker struct {
 	channel chan Task
 }
 
-func (p *ProxyWorker) Channel() chan Task {
-	return p.channel
-}
-
-func (l *LocalWorker) Channel() chan Task {
-	return l.channel
-}
-
 //Creates a new Proxy importing 'workerChannel' from Worker running
 //on workerAddr        
-func NewProxyWorker(workerAddr string) (p *ProxyWorker) {
+func NewProxyWorker(workerAddr string) (p *ProxyWorker, err os.Error) {
 	log.Print("Setting up a ProxyWorker")
 	p = new(ProxyWorker)
-	imp, _ := netchan.Import("tcp", workerAddr)
+	imp, err := netchan.Import("tcp", workerAddr)
+	if err != nil {
+		return
+	}
 	p.channel = make(chan Task)
-	imp.ImportNValues("workerChannel", p.channel, netchan.Send, 1, 1)
-	return p
-}
-
-
-//Helper function to import the Master channel from masterAddr
-func importMasterChan(masterAddr string) (c chan WorkSummary) {
-	imp, _ := netchan.Import("tcp", masterAddr)
-	c = make(chan WorkSummary, 10)
-	imp.Import("masterChannel", c, netchan.Send, 10)
+	err = imp.Import("workerChannel", p.channel, netchan.Send, 10)
+	if err != nil {
+		return
+	}
 	return
 }
 
+//Helper function to import the Master channel from masterAddr
+func importMasterChan(masterAddr string) (c chan WorkSummary) {
+       	imp, _ := netchan.Import("tcp", masterAddr)
+	c = make(chan WorkSummary, 10)
+	imp.Import("masterChannel", c, netchan.Send, 10)
+        go func(){
+           err := <- imp.Errors()
+           log.Print(err)
+        }()        
+	return
+}
 func (w *LocalWorker) start() {
+	log.Print("Waiting for tasks...")
 	for {
-
-		log.Print("Waiting for tasks...")
 		task := <-w.channel
 		log.Printf("Task Received from %v", task.MasterAddr)
-
-		masterChannel := importMasterChan(task.MasterAddr)
-		summary := w.execute(task)
-		masterChannel <- *summary
-		log.Printf("Summary sent to %s", task.MasterAddr)
+		go w.execute(task, importMasterChan(task.MasterAddr))
 	}
 }
 
 
-func (w *LocalWorker) execute(task Task) (summary *WorkSummary) {
+func (w *LocalWorker) execute(task Task, masterChannel chan WorkSummary) {
 
 	client := NewHTTPClient(task.Host, "")
 	client.Auth(task.User, task.Password)
@@ -124,16 +137,12 @@ func (w *LocalWorker) execute(task Task) (summary *WorkSummary) {
 		}
 	}
 
-	summary = &WorkSummary{
+	summary := &WorkSummary{
 		ErrCount: totalErr,
 		SucCount: totalSuc,
 		Avg:      float64(totalElapsed / int64(totalSuc)),
 	}
-	return
-}
-//Reported by the worker through resultChan
-type WorkSummary struct {
-	ErrCount int     //total errors
-	SucCount int     //total success
-	Avg      float64 //average response time
+
+	masterChannel <- *summary
+	log.Printf("Summary sent to %s", task.MasterAddr)
 }
