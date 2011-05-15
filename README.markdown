@@ -3,7 +3,15 @@ Intro
 
 gb is a stress test tool based on [Apache Benchmark](http://httpd.apache.org/docs/2.0/programs/ab.html "ab"). It has zero dependencies, so you should be able to build the projet and start using it.
 
+Architecture
+============
 
+The figure bellow depicts the distributed architeture behind gb:
+
+![gb](https://github.com/paulosuzart/gb/blob/master/arch.jpg)
+
+Using it
+========
 Running gb in Master/Workers mode:
 
 Run, say, two Workers:
