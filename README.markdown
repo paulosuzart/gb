@@ -7,18 +7,18 @@ gb is a stress test tool based on Apache Benchmark. It has zero dependencies, so
 Running gb in Master/Workers mode:
 
 Run, say, two Workers
-   ./gb -M worker -H localhost:1978 
-   ./gb -M worker -H localhost:1977
+    ./gb -M worker -H localhost:1978 
+    ./gb -M worker -H localhost:1977
 
 They should print something like:
 
-   2011/05/15 13:23:22 Starting in worker mode
-   2011/05/15 13:23:22 Setting up a Localworker...
-   2011/05/15 13:23:22 Waiting for tasks...
+    2011/05/15 13:23:22 Starting in worker mode
+    2011/05/15 13:23:22 Setting up a Localworker...
+    2011/05/15 13:23:22 Waiting for tasks...
 
 Now you are able to run the Master:
 
-   ./gb -M master -c 5 -n 20 -W localhost:1977,localhost:1978 -t http://localhost:8089
+    ./gb -M master -c 5 -n 20 -W localhost:1977,localhost:1978 -t http://localhost:8089
 
 Note: Every Worker should be up and running before starting the master
 
