@@ -39,21 +39,21 @@ func main() {
 	flag.Parse()
 
 	if *mode == "master" || *mode == "standalone" {
-		startMaster()
+		initMaster()
 	} else if *mode == "worker" {
-		startWorker()
+		initWorker()
 	}
 }
 
 
-func startWorker() {
+func initWorker() {
 	log.Print("Starting worker...")
 	NewLocalWorker(true, *workerAddr)
 }
 
 //Starts concurrent number of workers and waits for everyone terminate. 
 //Computes the average time and log it.
-func startMaster() {
+func initMaster() {
 
 	log.Print("Starting Master...")
 	masterChan := make(chan WorkSummary, 10)

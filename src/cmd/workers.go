@@ -4,7 +4,6 @@ import (
 	"log"
 	"netchan"
 	"time"
-	"fmt"
 )
 
 //Represents a set of request to be performed
@@ -51,7 +50,7 @@ func NewLocalWorker(export bool, workerAddr string) (w *LocalWorker) {
 		e.Export("workerChannel", w.channel, netchan.Recv)
 		e.ListenAndServe("tcp", workerAddr)
 	}
-	w.Execute()
+	w.start()
 	return
 }
 
@@ -89,46 +88,48 @@ func importMasterChan(masterAddr string) (c chan WorkSummary) {
 	return
 }
 
-func (w *LocalWorker) Execute() {
-	log.Print("Waiting for tasks...")
-
+func (w *LocalWorker) start() {
 	for {
+
+		log.Print("Waiting for tasks...")
 		task := <-w.channel
 		log.Printf("Task Received from %v", task.MasterAddr)
 
 		masterChannel := importMasterChan(task.MasterAddr)
-
-		client := NewHTTPClient(task.Host, "")
-		if task.BasicAuth {
-			client.Auth(task.User, task.Password)
-		}
-		var totalElapsed int64
-		totalErr := 0
-		totalSuc := 0
-
-		//perform n times the request
-		for i := 0; i < task.Requests; i++ {
-			start := time.Nanoseconds()
-			_, err := client.DoRequest()
-			elapsed := (time.Nanoseconds() - start)
-			if err == nil {
-				totalSuc += 1
-				totalElapsed += elapsed
-			} else {
-				totalErr += 1
-			}
-		}
-
-		summary := &WorkSummary{
-			ErrCount: totalErr,
-			SucCount: totalSuc,
-			Avg:      float64(totalElapsed / int64(totalSuc)),
-		}
+		summary := w.execute(task)
 		masterChannel <- *summary
+		log.Printf("Summary sent to %s", task.MasterAddr)
+	}
+}
 
-		log.Print("Summary sent to %s", task.MasterAddr)
+
+func (w *LocalWorker) execute(task Task) (summary *WorkSummary) {
+
+	client := NewHTTPClient(task.Host, "")
+	client.Auth(task.User, task.Password)
+	var totalElapsed int64
+	totalErr := 0
+	totalSuc := 0
+
+	//perform n times the request
+	for i := 0; i < task.Requests; i++ {
+		start := time.Nanoseconds()
+		_, err := client.DoRequest()
+		elapsed := (time.Nanoseconds() - start)
+		if err == nil {
+			totalSuc += 1
+			totalElapsed += elapsed
+		} else {
+			totalErr += 1
+		}
 	}
 
+	summary = &WorkSummary{
+		ErrCount: totalErr,
+		SucCount: totalSuc,
+		Avg:      float64(totalElapsed / int64(totalSuc)),
+	}
+	return
 }
 //Reported by the worker through resultChan
 type WorkSummary struct {
