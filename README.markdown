@@ -6,7 +6,8 @@ gb is a stress test tool based on Apache Benchmark. It has zero dependencies, so
 
 Running gb in Master/Workers mode:
 
-Run, say, two Workers
+Run, say, two Workers:
+
     ./gb -M worker -H localhost:1978 
     ./gb -M worker -H localhost:1977
 
