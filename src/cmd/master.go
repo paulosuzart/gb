@@ -17,15 +17,15 @@ var (
 )
 
 //Creates a serie of workers regarding the gb mode
-func getWorkers(mode string) (workers []Worker) {
+func getWorkers(mode *string) (workers []Worker) {
 	var wtype string
-	if mode == "standalone" {
+	if *mode == "standalone" {
                 wtype = "Local"
 		workers = make([]Worker, *concurrent)
 		for c := 0; c < *concurrent; c++ {
-			workers[c] = NewLocalWorker(nil, nil)
+			workers[c] = NewLocalWorker(mode, nil)
 		}
-	} else if mode == "master" {
+	} else if *mode == "master" {
                 wtype = "Proxy"
 		addrs := strings.Split(*workersAddrs, ",", -1)
 		workers = make([]Worker, len(addrs))
@@ -64,7 +64,7 @@ type Master struct {
 	channel         chan WorkSummary
 	ctrlChan        chan bool
 	runningWorkers  int
-	mode            string
+	mode            *string
 }
 
 
@@ -81,7 +81,7 @@ func NewMaster(mode, hostAddr *string) (m *Master) {
 	m = &Master{
 		channel:  masterChan,
 		ctrlChan: make(chan bool),
-		mode:     *mode,
+		mode:     mode,
 	}
 	return
 

@@ -11,7 +11,6 @@ import (
 //against Task.Host        
 type Task struct {
 	Host, User, Password string
-	BasicAuth            bool
 	Requests, Id         int
 	MasterAddr           string
 }
@@ -68,7 +67,7 @@ func NewLocalWorker(mode, hostAddr *string) (w *LocalWorker) {
 		e.Export("workerChannel", w.channel, netchan.Recv)
 		e.ListenAndServe("tcp", *hostAddr)
 	}
-	w.start()
+	go w.start()
 	return
 }
 
@@ -81,7 +80,7 @@ type ProxyWorker struct {
 //Creates a new Proxy importing 'workerChannel' from Worker running
 //on workerAddr        
 func NewProxyWorker(workerAddr string) (p *ProxyWorker, err os.Error) {
-	log.Print("Setting up a ProxyWorker")
+	log.Printf("Setting up a ProxyWorker for %s", workerAddr)
 	p = new(ProxyWorker)
 	imp, err := netchan.Import("tcp", workerAddr)
 	if err != nil {
