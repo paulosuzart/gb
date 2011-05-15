@@ -67,7 +67,7 @@ func NewLocalWorker(mode, hostAddr *string) (w *LocalWorker) {
 		e.Export("workerChannel", w.channel, netchan.Recv)
 		e.ListenAndServe("tcp", *hostAddr)
 	}
-	go w.start()
+	w.start()
 	return
 }
 

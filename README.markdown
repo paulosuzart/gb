@@ -82,3 +82,4 @@ welcome.
  *   Cover HTTP POST
  *   File upload
  *   Request parameters by csv file
+ *   Enable standalone mode again.

@@ -20,13 +20,13 @@ var (
 func getWorkers(mode *string) (workers []Worker) {
 	var wtype string
 	if *mode == "standalone" {
-                wtype = "Local"
+		wtype = "Local"
 		workers = make([]Worker, *concurrent)
 		for c := 0; c < *concurrent; c++ {
 			workers[c] = NewLocalWorker(mode, nil)
 		}
 	} else if *mode == "master" {
-                wtype = "Proxy"
+		wtype = "Proxy"
 		addrs := strings.Split(*workersAddrs, ",", -1)
 		workers = make([]Worker, len(addrs))
 		for i, addr := range addrs {
@@ -39,7 +39,7 @@ func getWorkers(mode *string) (workers []Worker) {
 			workers[i] = wk
 		}
 	}
-        log.Printf("%v %vWorkers will be used by gb", len(workers), wtype)        
+	log.Printf("%v %vWorkers will be used by gb", len(workers), wtype)
 	return
 
 }
@@ -61,10 +61,10 @@ func getCredentials() (u, p string) {
 
 //Represents this master.
 type Master struct {
-	channel         chan WorkSummary
-	ctrlChan        chan bool
-	runningWorkers  int
-	mode            *string
+	channel        chan WorkSummary
+	ctrlChan       chan bool
+	runningWorkers int
+	mode           *string
 }
 
 
@@ -121,7 +121,7 @@ func (m *Master) BenchMark() {
 		m.runningWorkers += 1
 	}
 	go m.Summarize()
-        
+
 }
 
 //Read back the workSumary of each worker.
