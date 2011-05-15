@@ -69,7 +69,7 @@ Available parameters by now are:
  *   `-H` host: Used for identuify the host running gb. No effect in standalone mode.
  *   `-W` workers addresses: Used for distributed gb. 
 
-Licencing?
+Licensing?
 ==========
 None yet.
 
