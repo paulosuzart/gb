@@ -75,7 +75,10 @@ None yet.
 
 TODO
 ====
-.Websocket to report in real time the status of request. A browser will be
+ *   Websocket to report in real time the status of request. A browser will be
 welcome.
-.Timeout for workers and Master
-.Distribute workers using a worker mode for gb. DONE!
+ *   Timeout for workers and Master
+ *   Distribute workers using a worker mode for gb. **DONE!**
+ *   Cover HTTP POST
+ *   File upload
+ *   Request parameters by csv file
