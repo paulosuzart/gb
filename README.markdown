@@ -1,7 +1,7 @@
 Intro
 =====
 
-gb is a stress test tool based on Apache Benchmark. It has zero dependencies, so you should be able to build the projet and start using it.
+gb is a stress test tool based on [Apache Benchmark](http://httpd.apache.org/docs/2.0/programs/ab.html "ab"). It has zero dependencies, so you should be able to build the projet and start using it.
 
 
 Running gb in Master/Workers mode:
@@ -63,7 +63,7 @@ Licencing?
 ==========
 None yet.
 
-paulosuzart@gmail.com
+<paulosuzart@gmail.com>
 
 TODO
 ====
