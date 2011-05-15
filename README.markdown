@@ -10,6 +10,8 @@ The figure bellow depicts the distributed architeture behind gb:
 
 ![gb](http://github.com/paulosuzart/gb/raw/master/arch.jpg)
 
+Note that distributed gb is optional. You can run it in standalone mode.
+
 Using it
 ========
 Running gb in Master/Workers mode:
