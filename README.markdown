@@ -8,7 +8,7 @@ Architecture
 
 The figure bellow depicts the distributed architeture behind gb:
 
-![gb](arch.jpg)
+![gb](http://github.com/paulosuzart/gb/raw/master/arch.jpg)
 
 Using it
 ========
