@@ -9,7 +9,7 @@ import (
 var (
 	mode = flag.String("M", "standalone", "standalone, master, worker")
 
-	hostAddr = flag.String("H", "localhost:9393", "The master Addr")
+	hostAddr = flag.String("H", "localhost:1970", "The master Addr")
 )
 
 func main() {

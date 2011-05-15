@@ -73,7 +73,7 @@ func NewLocalWorker(mode, hostAddr *string) (w *LocalWorker) {
 		e.Export("workerChannel", w.channel, netchan.Recv)
 		e.ListenAndServe("tcp", *hostAddr)
 	}
-	go w.start()
+	go w.listen()
 	return
 }
 
@@ -111,7 +111,10 @@ func importMasterChan(masterAddr string) (c chan WorkSummary) {
 	}()
 	return
 }
-func (w *LocalWorker) start() {
+
+//Listen to the worker channel. Every Task is executed by a different
+//go routine 
+func (w *LocalWorker) listen() {
 	log.Print("Waiting for tasks...")
 	for {
 		task := <-w.channel
@@ -124,7 +127,10 @@ func (w *LocalWorker) start() {
 	}
 }
 
-
+//Excecutes a task and send back a response to
+//w.masterChannel. masterChannel can be set by 
+//w.SetMasterChan in standalone mode or
+//dinamically imported in worker mode        
 func (w *LocalWorker) execute(task Task) {
 
 	client := NewHTTPClient(task.Host, "")
