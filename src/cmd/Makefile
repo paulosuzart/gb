@@ -1,6 +1,6 @@
 include $(GOROOT)/src/Make.inc
 TARG=gb
-GOFILES=\
+GOFILES=util.go\
 	http.go\
         workers.go\
 	master.go\

@@ -132,28 +132,33 @@ func (m *Master) BenchMark() {
 		newTask().Send(workers[0])
 		m.runningWorkers += 1
 	}
-	go m.Summarize()
+	go m.summarize()
 
 }
 
 //Read back the workSumary of each worker.
 //Calculates the average response time and total time for the
 //whole request.
-func (m *Master) Summarize() {
+func (m *Master) summarize() {
 	log.Print("Tasks distributed. Waiting for summaries...")
 	var start, end int64
 	var avg float64 = 0
 	totalSuc := 0
 	totalErr := 0
-
+	var max int64 = 0
+	var min int64 = 10 * 10000
 	start = time.Nanoseconds()
-	for result := range m.channel {
+	for summary := range m.channel {
 		//remove the worker from master
 		m.runningWorkers -= 1
-		avg = (result.Avg + avg) / 2
-		totalSuc += result.SucCount
-		totalErr += result.ErrCount
 
+		avg = (summary.Avg + avg) / 2
+		totalSuc += summary.SucCount
+		totalErr += summary.ErrCount
+
+		max = Max(max, summary.Max)
+
+		min = Min(min, summary.Min)
 		//if no workers left 
 		if m.runningWorkers == 0 {
 			end = time.Nanoseconds()
@@ -164,6 +169,8 @@ func (m *Master) Summarize() {
 
 	log.Printf("Total Go Benchmark time %v miliseconds.", (end-start)/1000000)
 	log.Printf("%v requests performed. Average response time %v miliseconds.", totalSuc, avg)
+	log.Printf("Max Response Time was %v milisecs.", max/1000000)
+	log.Printf("Min Response Time was %v milisecs.", min/1000000)
 	log.Printf("%v requests lost.", totalErr)
 	m.ctrlChan <- true
 }

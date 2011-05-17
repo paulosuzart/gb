@@ -20,13 +20,15 @@ type WorkSummary struct {
 	ErrCount int     //total errors
 	SucCount int     //total success
 	Avg      float64 //average response time
+	Max, Min int64   //the slowest requiest
 }
 
 
 //Put t to w.Channel()        
-func (t *Task) Send(w Worker) {
-	w.Channel() <- *t
+func (self *Task) Send(w Worker) {
+	w.Channel() <- *self
 }
+
 
 //The worker interface
 type Worker interface {
@@ -47,17 +49,18 @@ type LocalWorker struct {
 	ctrlChan      chan bool
 }
 
-func (p *ProxyWorker) Channel() chan Task {
-	return p.channel
+func (self *ProxyWorker) Channel() chan Task {
+	return self.channel
 }
 
-func (l *LocalWorker) Channel() chan Task {
-	return l.channel
+func (self *LocalWorker) Channel() chan Task {
+	return self.channel
 }
 
-func (l *LocalWorker) SetMasterChan(c chan WorkSummary) {
-	l.masterChannel = c
+func (self *LocalWorker) SetMasterChan(c chan WorkSummary) {
+	self.masterChannel = c
 }
+
 
 //Creates a new LocalWorker. If export is true, than
 //the LocalWorker exports its input channel in the network address
@@ -138,7 +141,8 @@ func (w *LocalWorker) execute(task Task) {
 	var totalElapsed int64
 	totalErr := 0
 	totalSuc := 0
-
+	var max int64 = 0
+	var min int64 = 10 * 10000
 	//perform n times the request
 	for i := 0; i < task.Requests; i++ {
 		start := time.Nanoseconds()
@@ -147,6 +151,8 @@ func (w *LocalWorker) execute(task Task) {
 		if err == nil {
 			totalSuc += 1
 			totalElapsed += elapsed
+			max = Max(max, totalElapsed)
+			min = Min(min, totalElapsed) 
 		} else {
 			totalErr += 1
 		}
@@ -156,6 +162,7 @@ func (w *LocalWorker) execute(task Task) {
 		ErrCount: totalErr,
 		SucCount: totalSuc,
 		Avg:      float64(totalElapsed / int64(totalSuc)),
+		Max:      max,
 	}
 
 	w.masterChannel <- *summary

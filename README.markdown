@@ -85,3 +85,4 @@ welcome.
  *   File upload
  *   Request parameters by csv file
  *   Enable standalone mode again. **DONE!**
+ *   Improve netchan.Importer usage in worker mode
