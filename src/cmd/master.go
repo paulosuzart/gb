@@ -6,6 +6,7 @@ import (
 	"netchan"
 	"flag"
 	"time"
+	"template"
 )
 
 var (
@@ -73,29 +74,74 @@ func getCredentials() (u, p string) {
 
 //Represents this master.
 type Master struct {
-	channel        chan WorkSummary
+	channel        chan WorkSummary //workers reports by WorkSummary
 	ctrlChan       chan bool
 	runningWorkers int
 	mode           *string
+	exptr          *netchan.Exporter
+	summary        *Summary //Master summary 
+        done           bool        
+
 }
 
+type Summary struct {
+	Start, End, Max    int64
+	TotalSuc, TotalErr int
+	Min                int64
+	Avg                float64
+	Elapsed            int64
+}
 
-func NewMaster(mode, hostAddr *string) (m *Master) {
+func (self *Summary) String() string {
+	s := `
+=========================================================================
+        Test Summary (gb. Version: 0.0.1 alpha)
+-------------------------------------------------------------------------                
+Total Go Benchmark time         | {Elapsed} miliseconds
+Tequests performed              | {TotalSuc}
+Average response time           | {Avg} miliseconds 
+Max Response Time               | {Max} milisecs
+Min Response Time               | {Min} milisecs
+Requests losts                  | {TotalErr}
+`
+	t := template.MustParse(s, nil)
+	sw := new(StringWritter)
+	t.Execute(sw, self) 
+	return sw.s
+}
+
+func (self *Master) Shutdown() {
+        if self.done {
+                return
+        }
+        self.done = true        
+	if *self.mode == "master" {
+		self.exptr.Hangup("masterChannel")
+	}
+	if self.summary.End == 0 {
+		self.summary.End = time.Nanoseconds()
+		self.summary.Elapsed = (self.summary.End - self.summary.Start) / 1000000
+	}
+	log.Print(self.summary)
+}
+
+func NewMaster(mode, hostAddr *string) *Master {
 	log.Print("Starting Master...")
 	masterChan := make(chan WorkSummary, 10)
+	m := new(Master)
 
 	if *mode == "master" {
-		e := netchan.NewExporter()
-		e.Export("masterChannel", masterChan, netchan.Recv)
-		e.ListenAndServe("tcp", *hostAddr)
+		m.exptr = netchan.NewExporter()
+		m.exptr.Export("masterChannel", masterChan, netchan.Recv)
+		m.exptr.ListenAndServe("tcp", *hostAddr)
 	}
 
-	m = &Master{
-		channel:  masterChan,
-		ctrlChan: make(chan bool),
-		mode:     mode,
-	}
-	return
+	m.channel = masterChan
+	m.ctrlChan = make(chan bool)
+	m.mode = mode
+	m.summary = &Summary{Min: -1}
+
+	return m
 
 }
 //For each client passed by arg, a new worker is created.
@@ -139,38 +185,27 @@ func (m *Master) BenchMark() {
 //Read back the workSumary of each worker.
 //Calculates the average response time and total time for the
 //whole request.
-func (m *Master) summarize() {
+func (self *Master) summarize() {
 	log.Print("Tasks distributed. Waiting for summaries...")
-	var start, end int64
-	var avg float64 = 0
-	totalSuc := 0
-	totalErr := 0
-	var max int64 = 0
-	var min int64 = 10 * 10000
-	start = time.Nanoseconds()
-	for summary := range m.channel {
+	self.summary.Start = time.Nanoseconds()
+	for tSummary := range self.channel {
 		//remove the worker from master
-		m.runningWorkers -= 1
+		self.runningWorkers -= 1
 
-		avg = (summary.Avg + avg) / 2
-		totalSuc += summary.SucCount
-		totalErr += summary.ErrCount
+		self.summary.Avg = (tSummary.Avg + self.summary.Avg) / 2
+		self.summary.TotalSuc += tSummary.SucCount
+		self.summary.TotalErr += tSummary.ErrCount
 
-		max = Max(max, summary.Max)
+		self.summary.Max = Max(self.summary.Max, tSummary.Max)
 
-		min = Min(min, summary.Min)
+		self.summary.Min = Min(self.summary.Min, tSummary.Min)
 		//if no workers left 
-		if m.runningWorkers == 0 {
-			end = time.Nanoseconds()
+		if self.runningWorkers == 0 {
+                        self.Shutdown()
 			break
 		}
 
 	}
 
-	log.Printf("Total Go Benchmark time %v miliseconds.", (end-start)/1000000)
-	log.Printf("%v requests performed. Average response time %v miliseconds.", totalSuc, avg)
-	log.Printf("Max Response Time was %v milisecs.", max/1000000)
-	log.Printf("Min Response Time was %v milisecs.", min/1000000)
-	log.Printf("%v requests lost.", totalErr)
-	m.ctrlChan <- true
+	self.ctrlChan <- true
 }

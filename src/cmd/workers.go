@@ -142,7 +142,7 @@ func (w *LocalWorker) execute(task Task) {
 	totalErr := 0
 	totalSuc := 0
 	var max int64 = 0
-	var min int64 = 10 * 10000
+	var min int64 = -1
 	//perform n times the request
 	for i := 0; i < task.Requests; i++ {
 		start := time.Nanoseconds()
@@ -151,8 +151,8 @@ func (w *LocalWorker) execute(task Task) {
 		if err == nil {
 			totalSuc += 1
 			totalElapsed += elapsed
-			max = Max(max, totalElapsed)
-			min = Min(min, totalElapsed) 
+			max = Max(max, totalElapsed/1000000)
+			min = Min(min, totalElapsed/1000000)
 		} else {
 			totalErr += 1
 		}
@@ -163,6 +163,7 @@ func (w *LocalWorker) execute(task Task) {
 		SucCount: totalSuc,
 		Avg:      float64(totalElapsed / int64(totalSuc)),
 		Max:      max,
+		Min:      min,
 	}
 
 	w.masterChannel <- *summary
