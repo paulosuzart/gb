@@ -1,3 +1,11 @@
+// Copyright (c) Paulo Suzart. All rights reserved.
+// The use and distribution terms for this software are covered by the
+// Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
+// which can be found in the file epl-v10.html at the root of this distribution.
+// By using this software in any fashion, you are agreeing to be bound by
+// the terms of this license.
+// You must not remove this notice, or any other, from this software.
+
 package main
 
 import (
@@ -19,7 +27,7 @@ var (
 
 //Creates a serie of workers regarding the gb mode
 //for the given master
-func getWorkers(master *Master) (workers []Worker) {
+func produceWorkers(master *Master) (workers []Worker) {
 	var wtype string
 	createLocalWorkers := func() {
 		wtype = "Local"
@@ -27,6 +35,7 @@ func getWorkers(master *Master) (workers []Worker) {
 		for c := 0; c < *concurrent; c++ {
 			wk := NewLocalWorker(master.mode, nil)
 			wk.SetMasterChan(master.channel)
+			wk.Serve()
 			workers[c] = wk
 		}
 
@@ -41,7 +50,7 @@ func getWorkers(master *Master) (workers []Worker) {
 			if err != nil {
 				log.Panicf("Unable to connect %v Worker", addr)
 			}
-
+			wk.Serve()
 			workers[i] = wk
 		}
 	}
@@ -80,8 +89,8 @@ type Master struct {
 	mode           *string
 	exptr          *netchan.Exporter
 	summary        *Summary //Master summary 
-        done           bool        
-
+	done           bool
+	session        int64
 }
 
 type Summary struct {
@@ -106,15 +115,15 @@ Requests losts                  | {TotalErr}
 `
 	t := template.MustParse(s, nil)
 	sw := new(StringWritter)
-	t.Execute(sw, self) 
+	t.Execute(sw, self)
 	return sw.s
 }
 
 func (self *Master) Shutdown() {
-        if self.done {
-                return
-        }
-        self.done = true        
+	if self.done {
+		return
+	}
+	self.done = true
 	if *self.mode == "master" {
 		self.exptr.Hangup("masterChannel")
 	}
@@ -122,14 +131,18 @@ func (self *Master) Shutdown() {
 		self.summary.End = time.Nanoseconds()
 		self.summary.Elapsed = (self.summary.End - self.summary.Start) / 1000000
 	}
-	log.Print(self.summary)
+	//log.Print(self.summary)
 }
 
+func genSession() int64 {
+	return time.Nanoseconds()
+}
 func NewMaster(mode, hostAddr *string) *Master {
 	log.Print("Starting Master...")
 	masterChan := make(chan WorkSummary, 10)
 	m := new(Master)
-
+	m.session = genSession()
+	log.Printf("TEST SESSION %v", m.session)
 	if *mode == "master" {
 		m.exptr = netchan.NewExporter()
 		m.exptr.Export("masterChannel", masterChan, netchan.Recv)
@@ -137,7 +150,7 @@ func NewMaster(mode, hostAddr *string) *Master {
 	}
 
 	m.channel = masterChan
-	m.ctrlChan = make(chan bool)
+	//m.ctrlChan = make(chan bool)
 	m.mode = mode
 	m.summary = &Summary{Min: -1}
 
@@ -147,9 +160,11 @@ func NewMaster(mode, hostAddr *string) *Master {
 //For each client passed by arg, a new worker is created.
 //Workers pointers are stored in m.workers to check the end of
 //work for each one.
-func (m *Master) BenchMark() {
+func (m *Master) BenchMark(ctrlChan chan bool) {
 	// starts the sumarize reoutine.
+	m.ctrlChan = ctrlChan
 
+	go m.summarize()
 	// #TODO if a worker get stuck it will never send back the result
 	// we need a timout for every worker.
 	u, p := getCredentials()
@@ -160,16 +175,18 @@ func (m *Master) BenchMark() {
 		t.MasterAddr = *hostAddr
 		t.User = u
 		t.Password = p
+		t.Session = m.session
 		return
 	}
 
-	workers := getWorkers(m)
+	workers := produceWorkers(m)
+	m.runningWorkers = len(workers)
 	load := *concurrent / len(workers)
 	remain := *concurrent % len(workers)
 	for _, w := range workers {
 		for l := 0; l < load; l++ {
 			newTask().Send(w)
-			m.runningWorkers += 1
+			//m.runningWorkers += 1
 		}
 	}
 	//The remaining work goes for the
@@ -178,7 +195,6 @@ func (m *Master) BenchMark() {
 		newTask().Send(workers[0])
 		m.runningWorkers += 1
 	}
-	go m.summarize()
 
 }
 
@@ -201,7 +217,7 @@ func (self *Master) summarize() {
 		self.summary.Min = Min(self.summary.Min, tSummary.Min)
 		//if no workers left 
 		if self.runningWorkers == 0 {
-                        self.Shutdown()
+			//self.Shutdown()
 			break
 		}
 

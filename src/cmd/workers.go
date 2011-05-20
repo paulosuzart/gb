@@ -1,3 +1,11 @@
+// Copyright (c) Paulo Suzart. All rights reserved.
+// The use and distribution terms for this software are covered by the
+// Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
+// which can be found in the file epl-v10.html at the root of this distribution.
+// By using this software in any fashion, you are agreeing to be bound by
+// the terms of this license.
+// You must not remove this notice, or any other, from this software.
+
 package main
 
 import (
@@ -5,6 +13,7 @@ import (
 	"netchan"
 	"time"
 	"os"
+	"sync"
 )
 
 //Represents a set of request to be performed
@@ -13,6 +22,7 @@ type Task struct {
 	Host, User, Password string
 	Requests, Id         int
 	MasterAddr           string
+	Session              int64
 }
 
 //Reported by the worker through resultChan
@@ -35,6 +45,7 @@ type Worker interface {
 	//Should return the input channel to
 	//interact with Worker
 	Channel() chan Task
+	Serve()
 }
 
 
@@ -46,13 +57,11 @@ type LocalWorker struct {
 	channel       chan Task
 	masterChannel chan WorkSummary
 	mode          *string
-	ctrlChan      chan bool
+	//ctrlChan      chan bool
 }
 
-func (self *ProxyWorker) Channel() chan Task {
-	return self.channel
-}
 
+//Worker interface implemented:w
 func (self *LocalWorker) Channel() chan Task {
 	return self.channel
 }
@@ -67,7 +76,7 @@ func (self *LocalWorker) SetMasterChan(c chan WorkSummary) {
 //provided by workerAddr        
 func NewLocalWorker(mode, hostAddr *string) (w *LocalWorker) {
 	w = new(LocalWorker)
-	w.ctrlChan = make(chan bool)
+	//w.ctrlChan = make(chan bool)
 	w.channel = make(chan Task, 10)
 	w.mode = mode
 	//exports the channels
@@ -76,53 +85,57 @@ func NewLocalWorker(mode, hostAddr *string) (w *LocalWorker) {
 		e.Export("workerChannel", w.channel, netchan.Recv)
 		e.ListenAndServe("tcp", *hostAddr)
 	}
-	go w.listen()
 	return
 }
 
-//Holds a reference to an imported channel
-//from the actual worker
-type ProxyWorker struct {
-	channel chan Task
-}
-
-//Creates a new Proxy importing 'workerChannel' from Worker running
-//on workerAddr        
-func NewProxyWorker(workerAddr string) (p *ProxyWorker, err os.Error) {
-	log.Printf("Setting up a ProxyWorker for %s", workerAddr)
-	p = new(ProxyWorker)
-	imp, err := netchan.Import("tcp", workerAddr)
-	if err != nil {
-		return
-	}
-	p.channel = make(chan Task)
-	err = imp.Import("workerChannel", p.channel, netchan.Send, 10)
-	if err != nil {
-		return
-	}
-	return
-}
+var _sessions map[int64]chan WorkSummary = make(map[int64]chan WorkSummary)
+var mu *sync.RWMutex = new(sync.RWMutex)
 
 //Helper function to import the Master channel from masterAddr
-func importMasterChan(masterAddr string) (c chan WorkSummary) {
-	imp, _ := netchan.Import("tcp", masterAddr)
+func importMasterChan(masterAddr string, session int64) (c chan WorkSummary) {
+	mu.Lock()
+	defer mu.Unlock()
+	if c, present := _sessions[session]; present {
+		log.Printf("cached Session %v", session)
+		return c
+	}
+	imp, err := netchan.Import("tcp", masterAddr)
+	if err != nil {
+		log.Print("Ferrou")
+	}
+
 	c = make(chan WorkSummary, 10)
 	imp.Import("masterChannel", c, netchan.Send, 10)
 	go func() {
 		err := <-imp.Errors()
 		log.Print(err)
+		log.Print("Recuperado")
 	}()
+
+	_sessions[session] = c
 	return
 }
 
+func cacheWatcher() {
+	for {
+		time.Sleep(3000 * 1000000)
+		mu.Lock()
+		log.Print("Cleanning up Sessions")
+		for k, _ := range _sessions {
+			_sessions[k] = _sessions[k], false
+		}
+		mu.Unlock()
+	}
+}
 //Listen to the worker channel. Every Task is executed by a different
 //go routine 
-func (w *LocalWorker) listen() {
+func (w *LocalWorker) Serve() {
 	log.Print("Waiting for tasks...")
+	go cacheWatcher()
 	for {
 		task := <-w.channel
 		if *w.mode == "worker" {
-			w.SetMasterChan(importMasterChan(task.MasterAddr))
+			w.SetMasterChan(importMasterChan(task.MasterAddr, task.Session))
 		}
 
 		log.Printf("Task Received from %v", task.MasterAddr)
@@ -168,4 +181,38 @@ func (w *LocalWorker) execute(task Task) {
 
 	w.masterChannel <- *summary
 	log.Printf("Summary sent to %s", task.MasterAddr)
+}
+//Holds a reference to an imported channel
+//from the actual worker
+type ProxyWorker struct {
+	channel  chan Task
+	importer *netchan.Importer
+}
+
+//Creates a new Proxy importing 'workerChannel' from Worker running
+//on workerAddr        
+func NewProxyWorker(workerAddr string) (p *ProxyWorker, err os.Error) {
+	log.Printf("Setting up a ProxyWorker for %s", workerAddr)
+	p = new(ProxyWorker)
+
+	imp, err := netchan.Import("tcp", workerAddr)
+	if err != nil {
+		return
+	}
+	p.importer = imp
+	return
+}
+
+//Worker interface implemented
+func (self *ProxyWorker) Channel() chan Task {
+	return self.channel
+}
+
+func (self *ProxyWorker) Serve() {
+
+	self.channel = make(chan Task)
+	err := self.importer.Import("workerChannel", self.channel, netchan.Send, 10)
+	if err != nil {
+		log.Print(err)
+	}
 }

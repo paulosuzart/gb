@@ -1,3 +1,11 @@
+// Copyright (c) Paulo Suzart. All rights reserved.
+// The use and distribution terms for this software are covered by the
+// Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
+// which can be found in the file epl-v10.html at the root of this distribution.
+// By using this software in any fashion, you are agreeing to be bound by
+// the terms of this license.
+// You must not remove this notice, or any other, from this software.
+
 package main
 
 import (
@@ -17,29 +25,30 @@ var (
 	hostAddr = flag.String("H", "localhost:1970", "The master Addr")
 )
 
-func main() {
+func init() {
 	flag.Parse()
 	log.Printf("Starting in %s mode", *mode)
+}
+
+func main() {
 	switch *mode {
 	case "master", "standalone":
 		m := NewMaster(mode, hostAddr)
-		m.BenchMark()
+		ctrlChan := make(chan bool)
+		m.BenchMark(ctrlChan)
 		if *maxTime != -1 {
 			go supervise(m, maxTime)
 		}
-		<-m.ctrlChan
+		<-ctrlChan
+		log.Print(m.summary)
 	case "worker":
-		w := NewLocalWorker(mode, hostAddr)
-		if *maxTime != -1 {
-			go supervise(nil, maxTime)
-		}
-		<-w.ctrlChan
+		NewLocalWorker(mode, hostAddr).Serve()
 	}
 }
 
 func supervise(supervised Supervised, maxTime *int64) {
 	time.Sleep(*maxTime * 1000000)
 	log.Print("WARN! gb stopped due to timeout. Work lost.")
-        supervised.Shutdown()        
+	supervised.Shutdown()
 	os.Exit(1)
 }
