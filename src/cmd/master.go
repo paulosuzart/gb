@@ -93,10 +93,15 @@ type Master struct {
 	session        Session
 }
 
+//Every master has its own session.
+//A sessions has an Id, that is simply the current nanoseconds.
+//It helps workers kill (for worker mode) any dead channel
+//imported from finished masters.
 type Session struct {
 	Id, Timeout int64
 }
 
+//The resunting summary of a master
 type Summary struct {
 	Start, End, Max    int64
 	TotalSuc, TotalErr int
@@ -123,6 +128,7 @@ Requests losts                  | {TotalErr}
 	return sw.s
 }
 
+//In case of timeout, this func is called by gb.go
 func (self *Master) Shutdown() {
 	if self.done {
 		return
@@ -142,6 +148,10 @@ func newSession(timeout int64) Session {
 	s := &Session{Id: time.Nanoseconds(), Timeout: timeout}
 	return *s
 }
+
+//New Master returned. If mode is master, attempts to export the
+//master channel for workers.
+//Timout is also considere.
 func NewMaster(mode, hostAddr *string, timeout int64) *Master {
 	log.Print("Starting Master...")
 	masterChan := make(chan WorkSummary, 10)
