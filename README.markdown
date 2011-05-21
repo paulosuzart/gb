@@ -90,4 +90,4 @@ welcome.
  *   File upload
  *   Request parameters by csv file
  *   Enable standalone mode again. **DONE!**
- *   Improve netchan.Importer usage in worker mode. **DONE! Now workers keeps the channel open for workers no more than -M. after -M the worker closes the Test session by its own, avoiding holding the dead channel forever.**
+ *   Improve netchan.Importer usage in worker mode. **DONE! Now workers keeps the channel open for masters no more than -M. after -M the worker closes the Test session (imported channel) by its own, avoiding holding the dead channel forever.**
