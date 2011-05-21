@@ -96,11 +96,10 @@ func importMasterChan(t Task) (c chan WorkSummary) {
 	mu.Lock()
 	defer mu.Unlock()
 	if c, present := _sessions[t.Session.Id]; present {
-		log.Printf("cached Session %v", t.Session.Id)
+		log.Printf("Cached Session %v", t.Session.Id)
 		return c
 	}
 
-	go cacheWatcher(t.Session)
 	imp, err := netchan.Import("tcp", t.MasterAddr)
 	if err != nil {
 		log.Print("Failed to create importer for %v", t.MasterAddr)
@@ -115,6 +114,7 @@ func importMasterChan(t Task) (c chan WorkSummary) {
 	}()
 
 	_sessions[t.Session.Id] = c
+	go cacheWatcher(t.Session)
 	return
 }
 
@@ -175,9 +175,11 @@ func (w *LocalWorker) execute(task Task) {
 	summary := &WorkSummary{
 		ErrCount: totalErr,
 		SucCount: totalSuc,
-		Avg:      float64(totalElapsed / int64(totalSuc)),
 		Max:      max,
 		Min:      min,
+	}
+	if totalSuc != 0 {
+		summary.Avg = float64(totalElapsed / int64(totalSuc))
 	}
 
 	w.masterChannel <- *summary

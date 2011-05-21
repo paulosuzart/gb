@@ -142,11 +142,11 @@ func newSession(timeout int64) Session {
 	s := &Session{Id: time.Nanoseconds(), Timeout: timeout}
 	return *s
 }
-func NewMaster(mode, hostAddr *string, timeout *int64) *Master {
+func NewMaster(mode, hostAddr *string, timeout int64) *Master {
 	log.Print("Starting Master...")
 	masterChan := make(chan WorkSummary, 10)
 	m := new(Master)
-	m.session = newSession(*timeout)
+	m.session = newSession(timeout)
 
 	log.Printf("TEST SESSION %v", m.session)
 	if *mode == "master" {
