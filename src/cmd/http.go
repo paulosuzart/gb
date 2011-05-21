@@ -16,7 +16,7 @@ const (
 //Hold information about how to connect and
 //authenticate to the server
 type HTTPClient struct {
-	Addr, Method, User, Password string
+	addr, method, user, password string
 	basicAuth                    bool
 	client                       *http.Client
 }
@@ -30,10 +30,10 @@ func NewHTTPClient(addr, method string) (c *HTTPClient) {
 		m = method
 	}
 	c = &HTTPClient{
-		Addr:      addr,
-		Method:    m,
-		User:      "",
-		Password:  "",
+		addr:      addr,
+		method:    m,
+		user:      "",
+		password:  "",
 		basicAuth: false,
 		client:    new(http.Client),
 	}
@@ -42,11 +42,21 @@ func NewHTTPClient(addr, method string) (c *HTTPClient) {
 
 //Used to set auth information for HTTP Basic Authentication.
 func (c *HTTPClient) Auth(usr, passwd string) {
-	c.User = usr
-	c.Password = passwd
+	c.user = usr
+	c.password = passwd
 	c.basicAuth = true
 }
 
+//Uses base64 to encode "user: password" for
+//Http Header Authorization.
+func authInfo(user, password string) string{
+
+		srcs := []byte(user + ": " + password)
+		dsts := make([]byte, base64.StdEncoding.EncodedLen(len(srcs)))
+
+		base64.StdEncoding.Encode(dsts, srcs)
+                return string(dsts)         
+}        
 type Error string
 
 func (e Error) String() string {
@@ -56,15 +66,16 @@ func (e Error) String() string {
 //Auth is handled if Auth was previously invoked to set
 //user info.
 func (c *HTTPClient) DoRequest() (response *http.Response, err os.Error) {
-	defer func() {
+        //Recover if things goes really bad
+        defer func() {
 		if e := recover(); e != nil {
 			response = nil
 			err = e.(Error)
-			log.Fatal(err)
+			log.Print(err)
 		}
 	}()
 
-	response, _, err = c.client.Get(c.Addr)
+	response, _, err = c.client.Get(c.addr)
 
 	if err != nil {
 		log.Printf("Error performing Request: %v", err.String())
@@ -75,18 +86,14 @@ func (c *HTTPClient) DoRequest() (response *http.Response, err os.Error) {
 		var req *http.Request = new(http.Request)
 		var h http.Header = map[string][]string{}
 
-		srcs := []byte(c.User + ": " + c.Password)
-		dsts := make([]byte, base64.StdEncoding.EncodedLen(len(srcs)))
 
-		base64.StdEncoding.Encode(dsts, srcs)
-
-		h.Add("Authorization", "Basic "+string(dsts))
+		h.Add("Authorization", authInfo(c.user, c.password))
 
 		req.Header = h
-		req.Method = "GET"
+		req.Method = c.method 
 		req.ProtoMajor = 1
 		req.ProtoMinor = 1
-		req.URL, _ = http.ParseURL(c.Addr)
+		req.URL, _ = http.ParseURL(c.addr)
 
 		_, err = c.client.Do(req)
 
