@@ -33,7 +33,7 @@ func init() {
 func main() {
 	switch *mode {
 	case "master", "standalone":
-		m := NewMaster(mode, hostAddr)
+		m := NewMaster(mode, hostAddr, maxTime)
 		ctrlChan := make(chan bool)
 		m.BenchMark(ctrlChan)
 		if *maxTime != -1 {

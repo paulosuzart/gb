@@ -60,14 +60,14 @@ func (c *HTTPClient) DoRequest() (response *http.Response, err os.Error) {
 		if e := recover(); e != nil {
 			response = nil
 			err = e.(Error)
-			log.Panic(err)
+			log.Fatal(err)
 		}
 	}()
 
 	response, _, err = c.client.Get(c.Addr)
 
 	if err != nil {
-		log.Print(err.String())
+		log.Printf("Error performing Request: %v", err.String())
 		return nil, err
 	}
 

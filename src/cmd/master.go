@@ -90,7 +90,11 @@ type Master struct {
 	exptr          *netchan.Exporter
 	summary        *Summary //Master summary 
 	done           bool
-	session        int64
+	session        Session
+}
+
+type Session struct {
+	Id, Timeout int64
 }
 
 type Summary struct {
@@ -134,14 +138,16 @@ func (self *Master) Shutdown() {
 	//log.Print(self.summary)
 }
 
-func genSession() int64 {
-	return time.Nanoseconds()
+func newSession(timeout int64) Session {
+	s := &Session{Id: time.Nanoseconds(), Timeout: timeout}
+	return *s
 }
-func NewMaster(mode, hostAddr *string) *Master {
+func NewMaster(mode, hostAddr *string, timeout *int64) *Master {
 	log.Print("Starting Master...")
 	masterChan := make(chan WorkSummary, 10)
 	m := new(Master)
-	m.session = genSession()
+	m.session = newSession(*timeout)
+
 	log.Printf("TEST SESSION %v", m.session)
 	if *mode == "master" {
 		m.exptr = netchan.NewExporter()
@@ -217,7 +223,8 @@ func (self *Master) summarize() {
 		self.summary.Min = Min(self.summary.Min, tSummary.Min)
 		//if no workers left 
 		if self.runningWorkers == 0 {
-			//self.Shutdown()
+			self.summary.End = time.Nanoseconds()
+			self.summary.Elapsed = (self.summary.End - self.summary.Start) / 1000000
 			break
 		}
 

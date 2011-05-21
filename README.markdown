@@ -77,18 +77,17 @@ Available parameters by now are:
 
 Licensing?
 ==========
-None yet.
+Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 
-<paulosuzart@gmail.com>
 
 TODO
 ====
  *   Websocket to report in real time the status of request. A browser will be
 welcome.
- *   Timeout for workers and Master. **DONE! (timout for the whole gb execution)** 
+ *   Timeout for workers and Master. **DONE!** 
  *   Distribute workers using a worker mode for gb. **DONE!**
  *   Cover HTTP POST
  *   File upload
  *   Request parameters by csv file
  *   Enable standalone mode again. **DONE!**
- *   Improve netchan.Importer usage in worker mode
+ *   Improve netchan.Importer usage in worker mode. **DONE! Now workers keeps the channel open for workers no more than -M. after -M the worker closes the Test session by its own, avoiding holding the dead channel forever.**

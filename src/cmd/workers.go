@@ -22,7 +22,7 @@ type Task struct {
 	Host, User, Password string
 	Requests, Id         int
 	MasterAddr           string
-	Session              int64
+	Session              Session
 }
 
 //Reported by the worker through resultChan
@@ -92,16 +92,17 @@ var _sessions map[int64]chan WorkSummary = make(map[int64]chan WorkSummary)
 var mu *sync.RWMutex = new(sync.RWMutex)
 
 //Helper function to import the Master channel from masterAddr
-func importMasterChan(masterAddr string, session int64) (c chan WorkSummary) {
+func importMasterChan(t Task) (c chan WorkSummary) {
 	mu.Lock()
 	defer mu.Unlock()
-	if c, present := _sessions[session]; present {
-		log.Printf("cached Session %v", session)
+	go cacheWatcher(t.Session)
+	if c, present := _sessions[t.Session.Id]; present {
+		log.Printf("cached Session %v", t.Session.Id)
 		return c
 	}
-	imp, err := netchan.Import("tcp", masterAddr)
+	imp, err := netchan.Import("tcp", t.MasterAddr)
 	if err != nil {
-		log.Print("Ferrou")
+		log.Print("Failed to create importer for %v", t.MasterAddr)
 	}
 
 	c = make(chan WorkSummary, 10)
@@ -112,30 +113,25 @@ func importMasterChan(masterAddr string, session int64) (c chan WorkSummary) {
 		log.Print("Recuperado")
 	}()
 
-	_sessions[session] = c
+	_sessions[t.Session.Id] = c
 	return
 }
 
-func cacheWatcher() {
-	for {
-		time.Sleep(3000 * 1000000)
-		mu.Lock()
-		log.Print("Cleanning up Sessions")
-		for k, _ := range _sessions {
-			_sessions[k] = _sessions[k], false
-		}
-		mu.Unlock()
-	}
+func cacheWatcher(session Session) {
+	time.Sleep(session.Timeout)
+	mu.Lock()
+	log.Printf("Cleanning up Session %v", session.Id)
+	_sessions[session.Id] = _sessions[session.Id], false
+	mu.Unlock()
 }
 //Listen to the worker channel. Every Task is executed by a different
 //go routine 
 func (w *LocalWorker) Serve() {
 	log.Print("Waiting for tasks...")
-	go cacheWatcher()
 	for {
 		task := <-w.channel
 		if *w.mode == "worker" {
-			w.SetMasterChan(importMasterChan(task.MasterAddr, task.Session))
+			w.SetMasterChan(importMasterChan(task))
 		}
 
 		log.Printf("Task Received from %v", task.MasterAddr)
@@ -148,7 +144,11 @@ func (w *LocalWorker) Serve() {
 //w.SetMasterChan in standalone mode or
 //dinamically imported in worker mode        
 func (w *LocalWorker) execute(task Task) {
-
+	defer func() {
+		if e := recover(); e != nil {
+			log.Printf("Erro Fatal: %v", e)
+		}
+	}()
 	client := NewHTTPClient(task.Host, "")
 	client.Auth(task.User, task.Password)
 	var totalElapsed int64
