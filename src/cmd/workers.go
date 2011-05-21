@@ -14,6 +14,7 @@ import (
 	"time"
 	"os"
 	"sync"
+	"http"
 )
 
 //Represents a set of request to be performed
@@ -160,14 +161,16 @@ func (w *LocalWorker) execute(task Task) {
 	//perform n times the request
 	for i := 0; i < task.Requests; i++ {
 		start := time.Nanoseconds()
-		_, err := client.DoRequest()
+		resp, err := client.DoRequest()
 		elapsed := (time.Nanoseconds() - start)
-		if err == nil {
+		if err == nil && resp.StatusCode == http.StatusOK {
 			totalSuc += 1
 			totalElapsed += elapsed
 			max = Max(max, totalElapsed/1000000)
 			min = Min(min, totalElapsed/1000000)
 		} else {
+			//Any response other than 200 will be an
+			//failure
 			totalErr += 1
 		}
 	}

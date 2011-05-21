@@ -49,14 +49,15 @@ func (c *HTTPClient) Auth(usr, passwd string) {
 
 //Uses base64 to encode "user: password" for
 //Http Header Authorization.
-func authInfo(user, password string) string{
+func authInfo(user, password string) string {
 
-		srcs := []byte(user + ": " + password)
-		dsts := make([]byte, base64.StdEncoding.EncodedLen(len(srcs)))
+	srcs := []byte(user + ": " + password)
+	dsts := make([]byte, base64.StdEncoding.EncodedLen(len(srcs)))
 
-		base64.StdEncoding.Encode(dsts, srcs)
-                return string(dsts)         
-}        
+	base64.StdEncoding.Encode(dsts, srcs)
+	return string(dsts)
+}
+
 type Error string
 
 func (e Error) String() string {
@@ -66,8 +67,8 @@ func (e Error) String() string {
 //Auth is handled if Auth was previously invoked to set
 //user info.
 func (c *HTTPClient) DoRequest() (response *http.Response, err os.Error) {
-        //Recover if things goes really bad
-        defer func() {
+	//Recover if things goes really bad
+	defer func() {
 		if e := recover(); e != nil {
 			response = nil
 			err = e.(Error)
@@ -81,16 +82,14 @@ func (c *HTTPClient) DoRequest() (response *http.Response, err os.Error) {
 		log.Printf("Error performing Request: %v", err.String())
 		return nil, err
 	}
-
 	if response.StatusCode == http.StatusUnauthorized && c.basicAuth {
 		var req *http.Request = new(http.Request)
 		var h http.Header = map[string][]string{}
 
-
 		h.Add("Authorization", authInfo(c.user, c.password))
 
 		req.Header = h
-		req.Method = c.method 
+		req.Method = c.method
 		req.ProtoMajor = 1
 		req.ProtoMinor = 1
 		req.URL, _ = http.ParseURL(c.addr)
