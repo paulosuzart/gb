@@ -116,7 +116,7 @@ func (self *Summary) String() string {
         Test Summary (gb. Version: 0.0.1 alpha)
 -------------------------------------------------------------------------                
 Total Go Benchmark time         | {Elapsed} miliseconds
-Tequests performed              | {TotalSuc}
+Requests performed              | {TotalSuc}
 Average response time           | {Avg} miliseconds 
 Max Response Time               | {Max} milisecs
 Min Response Time               | {Min} milisecs
@@ -196,12 +196,12 @@ func (m *Master) BenchMark(ctrlChan chan bool) {
 	}
 
 	workers := produceWorkers(m)
-	m.runningWorkers = len(workers)
 	load := *concurrent / len(workers)
+	log.Printf("load %v", load)
 	remain := *concurrent % len(workers)
 	for _, w := range workers {
-		m.runningWorkers += 1
 		for l := 0; l < load; l++ {
+			m.runningWorkers += 1
 			newTask().Send(w)
 		}
 	}

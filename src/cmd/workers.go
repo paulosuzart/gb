@@ -120,7 +120,7 @@ func importMasterChan(t Task) (c chan WorkSummary) {
 }
 
 func cacheWatcher(session Session) {
-	time.Sleep(session.Timeout)
+	time.Sleep(session.Timeout * 2)
 	mu.Lock()
 	log.Printf("Cleanning up Session %v", session.Id)
 	_sessions[session.Id] = _sessions[session.Id], false
