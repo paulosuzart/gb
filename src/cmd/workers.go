@@ -127,7 +127,8 @@ func cacheWatcher(session Session) {
 	mu.Unlock()
 }
 //Listen to the worker channel. Every Task is executed by a different
-//go routine 
+//go routine.
+//Waits until a task come fom w.channel        
 func (w *LocalWorker) Serve() {
 	log.Print("Waiting for tasks...")
 	for {
@@ -214,6 +215,8 @@ func (self *ProxyWorker) Channel() chan Task {
 	return self.channel
 }
 
+//Import the worker channel represented by this
+//Proxy        
 func (self *ProxyWorker) Serve() {
 
 	self.channel = make(chan Task)
