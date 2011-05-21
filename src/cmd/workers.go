@@ -95,11 +95,12 @@ var mu *sync.RWMutex = new(sync.RWMutex)
 func importMasterChan(t Task) (c chan WorkSummary) {
 	mu.Lock()
 	defer mu.Unlock()
-	go cacheWatcher(t.Session)
 	if c, present := _sessions[t.Session.Id]; present {
 		log.Printf("cached Session %v", t.Session.Id)
 		return c
 	}
+
+	go cacheWatcher(t.Session)
 	imp, err := netchan.Import("tcp", t.MasterAddr)
 	if err != nil {
 		log.Print("Failed to create importer for %v", t.MasterAddr)

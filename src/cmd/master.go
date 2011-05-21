@@ -192,14 +192,12 @@ func (m *Master) BenchMark(ctrlChan chan bool) {
 	for _, w := range workers {
 		for l := 0; l < load; l++ {
 			newTask().Send(w)
-			//m.runningWorkers += 1
 		}
 	}
 	//The remaining work goes for the
 	//first worker         
 	for r := 0; r < remain; r++ {
 		newTask().Send(workers[0])
-		m.runningWorkers += 1
 	}
 
 }
