@@ -28,6 +28,7 @@ They should print something like:
     2011/05/15 13:23:22 Waiting for tasks...
 
 Now you are able to run the Master:
+    
     ./gb -M master -W localhost:1978,localhost:1979 -c 2 -n 20 -T 70
 
 Note: Every Worker should be up and running before starting the master
@@ -66,12 +67,12 @@ Parameters
 
 Available parameters by now are:
 
- *   `-t target`. It may change, bu represents the target http server.
+ *   `-t target`. Target http server. The protocol is mandatory.
  *   `-c concurrent`. Number of clients to perform the requests.
  *   `-n requests`. Number of request each client should perform.
  *   `-A username:password`. For Http Basic Authentication.
  *   `-M mode`: standalone, master, worker.
- *   `-H host`: Used for identuify the host running gb. No effect in standalone mode.
+ *   `-H host`: Used for identify the host running gb. No effect in standalone mode. Default is ($hostname):1970.
  *   `-W workers addresses`: Used for distributed gb. Separated by comma.
  *   `-T max time`: Max time in milisecs for gb execution. 
 
