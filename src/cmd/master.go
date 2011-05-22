@@ -197,7 +197,6 @@ func (m *Master) BenchMark(ctrlChan chan bool) {
 
 	workers := produceWorkers(m)
 	load := *concurrent / len(workers)
-	log.Printf("load %v", load)
 	remain := *concurrent % len(workers)
 	for _, w := range workers {
 		for l := 0; l < load; l++ {
