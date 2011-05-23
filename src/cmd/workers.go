@@ -46,6 +46,7 @@ type Worker interface {
 	//Should return the input channel to
 	//interact with Worker
 	Channel() chan Task
+	// Should be called in a go routine
 	Serve()
 }
 
@@ -170,7 +171,7 @@ func (w *LocalWorker) execute(task Task) {
 			max = Max(max, totalElapsed/1000000)
 			min = Min(min, totalElapsed/1000000)
 		} else {
-			//Any response other than 200 will be an
+			//Any response other than 200 will be a
 			//failure
 			totalErr += 1
 		}
@@ -216,7 +217,7 @@ func (self *ProxyWorker) Channel() chan Task {
 }
 
 //Import the worker channel represented by this
-//Proxy        
+//Proxy. Better if executed in go Serve()         
 func (self *ProxyWorker) Serve() {
 
 	self.channel = make(chan Task)

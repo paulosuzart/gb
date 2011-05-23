@@ -18,11 +18,12 @@ import (
 type Supervised interface {
 	Shutdown()
 }
+
 var host, _ = os.Hostname()
 var (
 	mode     = flag.String("M", "standalone", "standalone, master, worker")
 	maxTime  = flag.Int64("T", -1, "Max time in milisecs.")
-	hostAddr = flag.String("H", host + ":1970", "The master Addr")
+	hostAddr = flag.String("H", host+":1970", "The master Addr")
 )
 
 func init() {

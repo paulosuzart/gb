@@ -35,7 +35,7 @@ func produceWorkers(master *Master) (workers []Worker) {
 		for c := 0; c < *concurrent; c++ {
 			wk := NewLocalWorker(master.mode, nil)
 			wk.SetMasterChan(master.channel)
-			wk.Serve()
+			go wk.Serve()
 			workers[c] = wk
 		}
 
@@ -48,7 +48,7 @@ func produceWorkers(master *Master) (workers []Worker) {
 			//Try to connect
 			wk, err := NewProxyWorker(addr)
 			if err != nil {
-				log.Panicf("Unable to connect %v Worker", addr)
+				log.Panicf("Unable to connect %v Worker\n make sure it is running", addr)
 			}
 			wk.Serve()
 			workers[i] = wk
@@ -83,14 +83,14 @@ func getCredentials() (u, p string) {
 
 //Represents this master.
 type Master struct {
-	channel        chan WorkSummary //workers reports by WorkSummary
-	ctrlChan       chan bool
-	runningWorkers int
-	mode           *string
-	exptr          *netchan.Exporter
-	summary        *Summary //Master summary 
-	done           bool
-	session        Session
+	channel      chan WorkSummary //workers reports by WorkSummary
+	ctrlChan     chan bool
+	runningTasks int
+	mode         *string
+	exptr        *netchan.Exporter
+	summary      *Summary //Master summary 
+	done         bool
+	session      Session
 }
 
 //Every master has its own session.
@@ -180,9 +180,6 @@ func (m *Master) BenchMark(ctrlChan chan bool) {
 	// starts the sumarize reoutine.
 	m.ctrlChan = ctrlChan
 
-	go m.summarize()
-	// #TODO if a worker get stuck it will never send back the result
-	// we need a timout for every worker.
 	u, p := getCredentials()
 	newTask := func() (t *Task) {
 		t = new(Task)
@@ -196,18 +193,19 @@ func (m *Master) BenchMark(ctrlChan chan bool) {
 	}
 
 	workers := produceWorkers(m)
+	go m.summarize()
 	load := *concurrent / len(workers)
 	remain := *concurrent % len(workers)
 	for _, w := range workers {
 		for l := 0; l < load; l++ {
-			m.runningWorkers += 1
+			m.runningTasks += 1
 			newTask().Send(w)
 		}
 	}
 	//The remaining work goes for the
 	//first worker        
 	for r := 0; r < remain; r++ {
-		m.runningWorkers += 1
+		m.runningTasks += 1
 		newTask().Send(workers[0])
 	}
 
@@ -221,7 +219,7 @@ func (self *Master) summarize() {
 	self.summary.Start = time.Nanoseconds()
 	for tSummary := range self.channel {
 		//remove the worker from master
-		self.runningWorkers -= 1
+		self.runningTasks -= 1
 
 		self.summary.Avg = (tSummary.Avg + self.summary.Avg) / 2
 		self.summary.TotalSuc += tSummary.SucCount
@@ -231,7 +229,7 @@ func (self *Master) summarize() {
 
 		self.summary.Min = Min(self.summary.Min, tSummary.Min)
 		//if no workers left 
-		if self.runningWorkers == 0 {
+		if self.runningTasks == 0 {
 			self.summary.End = time.Nanoseconds()
 			self.summary.Elapsed = (self.summary.End - self.summary.Start) / 1000000
 			break
