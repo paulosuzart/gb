@@ -14,6 +14,15 @@ Note that distributed gb is optional. You can run it in standalone mode.
 
 Using it
 ========
+
+Before, clone the project and build it:
+    
+    git clone git@github.com:paulosuzart/gb.git
+    gomake
+    
+You can also use `git clone git@github.com:paulosuzart/gb.git`. That will put a compile gb to you $GOROOT/bin after clonning the git repo to $GOROOT/src/pkg/github.com
+
+    
 Running gb in Master/Workers mode:
 
 Run, say, two Workers:
@@ -67,14 +76,15 @@ Parameters
 
 Available parameters by now are:
 
- *   `-t target`. Target http server. The protocol is mandatory.
  *   `-c concurrent`. Number of clients to perform the requests.
+ *   `-C Content-Type`. Http header to be sent.
  *   `-n requests`. Number of request each client should perform.
  *   `-A username:password`. For Http Basic Authentication.
  *   `-M mode`: standalone, master, worker.
  *   `-H host`: Used for identify the host running gb. No effect in standalone mode. Default is ($hostname):1970.
  *   `-W workers addresses`: Used for distributed gb. Separated by comma.
  *   `-T max time`: Max time in milisecs for gb execution. 
+ *   `-t target`. Target http server. The protocol is mandatory.
 
 Licensing?
 ==========
