@@ -20,7 +20,7 @@ Before, clone the project and build it:
     git clone git@github.com:paulosuzart/gb.git
     gomake
     
-You can also use `git clone git@github.com:paulosuzart/gb.git`. That will put a compile gb to you $GOROOT/bin after clonning the git repo to $GOROOT/src/pkg/github.com
+You can also use `git clone git@github.com:paulosuzart/gb.git`. That will put a compile gb to you `$GOROOT/bin` after clonning the git repo to `$GOROOT/src/pkg/github.com`.
 
     
 Running gb in Master/Workers mode:
