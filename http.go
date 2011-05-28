@@ -18,24 +18,24 @@ const (
 type HTTPClient struct {
 	addr, method, user, password string
 	basicAuth                    bool
-	client                       *http.Client
+	contentType                  string
 }
 
-//HTTPClient constructor. If method is "", DEFAULT_VER is
+//HTTPClient constructor. If method is "", DEFAULT_VERB is
 //then used.
-func NewHTTPClient(addr, method string) (c *HTTPClient) {
+func NewHTTPClient(addr, method, contentType string) (c *HTTPClient) {
 	m := DEFAULT_VERB
 
 	if method != "" {
 		m = method
 	}
 	c = &HTTPClient{
-		addr:      addr,
-		method:    m,
-		user:      "",
-		password:  "",
-		basicAuth: false,
-		client:    new(http.Client),
+		addr:        addr,
+		method:      m,
+		user:        "",
+		password:    "",
+		contentType: contentType,
+		basicAuth:   false,
 	}
 	return
 }
@@ -63,6 +63,24 @@ type Error string
 func (e Error) String() string {
 	return string(e)
 }
+
+func defaultRequest(url string, headers map[string]string) (req *http.Request, err os.Error) {
+	var h http.Header = map[string][]string{}
+	req = new(http.Request)
+	for k, v := range headers {
+		h.Add(k, v)
+	}
+	req.Header = h
+	req.ProtoMajor = 1
+	req.ProtoMinor = 1
+	if req.URL, err = http.ParseURL(url); err != nil {
+		return
+	}
+	return
+
+}
+
+var gbTransport *http.Transport = &http.Transport{DisableKeepAlives: true}
 //Perform the HTTP method against the target host.
 //Auth is handled if Auth was previously invoked to set
 //user info.
@@ -70,31 +88,25 @@ func (c *HTTPClient) DoRequest() (response *http.Response, err os.Error) {
 	//Recover if things goes really bad
 	defer func() {
 		if e := recover(); e != nil {
-			response = nil
-			err = e.(Error)
-			log.Print(err)
+			log.Print(e)
 		}
 	}()
 
-	response, _, err = c.client.Get(c.addr)
+	req, err := defaultRequest(c.addr, map[string]string{"Content-Type": c.contentType})
+	if err != nil {
+		return
+	}
+	response, err = gbTransport.RoundTrip(req)
 
 	if err != nil {
 		log.Printf("Error performing Request: %v", err.String())
 		return nil, err
 	}
 	if response.StatusCode == http.StatusUnauthorized && c.basicAuth {
-		var req *http.Request = new(http.Request)
-		var h http.Header = map[string][]string{}
 
-		h.Add("Authorization", authInfo(c.user, c.password))
+		req.Header.Add("Authorization", authInfo(c.user, c.password))
 
-		req.Header = h
-		req.Method = c.method
-		req.ProtoMajor = 1
-		req.ProtoMinor = 1
-		req.URL, _ = http.ParseURL(c.addr)
-
-		_, err = c.client.Do(req)
+		_, err = gbTransport.RoundTrip(req) //c.client.Do(req)
 
 		if err != nil {
 			log.Println(err)

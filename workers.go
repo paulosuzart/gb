@@ -20,10 +20,10 @@ import (
 //Represents a set of request to be performed
 //against Task.Host        
 type Task struct {
-	Host, User, Password string
-	Requests, Id         int
-	MasterAddr           string
-	Session              Session
+	Host, User, Password    string
+	Requests, Id            int
+	MasterAddr, ContentType string
+	Session                 Session
 }
 
 //Reported by the worker through resultChan
@@ -77,8 +77,12 @@ func (self *LocalWorker) SetMasterChan(c chan WorkSummary) {
 //the LocalWorker exports its input channel in the network address
 //provided by workerAddr        
 func NewLocalWorker(mode, hostAddr *string) (w *LocalWorker) {
+	defer func() {
+		if e := recover(); e != nil {
+			log.Fatalf("Panic!!!!", e)
+		}
+	}()
 	w = new(LocalWorker)
-	//w.ctrlChan = make(chan bool)
 	w.channel = make(chan Task, 10)
 	w.mode = mode
 	//exports the channels
@@ -130,30 +134,30 @@ func cacheWatcher(session Session) {
 //Listen to the worker channel. Every Task is executed by a different
 //go routine.
 //Waits until a task come fom w.channel        
-func (w *LocalWorker) Serve() {
+func (self *LocalWorker) Serve() {
 	log.Print("Waiting for tasks...")
 	for {
-		task := <-w.channel
-		if *w.mode == "worker" {
-			w.SetMasterChan(importMasterChan(task))
+		task := <-self.channel
+		if *self.mode == "worker" {
+			self.SetMasterChan(importMasterChan(task))
 		}
 
 		log.Printf("Task Received from %v", task.MasterAddr)
-		go w.execute(task)
+		go self.execute(task)
 	}
 }
 
 //Excecutes a task and send back a response to
 //w.masterChannel. masterChannel can be set by 
 //w.SetMasterChan in standalone mode or
-//dinamically imported in worker mode        
+//dynamically imported in worker mode        
 func (w *LocalWorker) execute(task Task) {
 	defer func() {
 		if e := recover(); e != nil {
 			log.Printf("Erro Fatal: %v", e)
 		}
 	}()
-	client := NewHTTPClient(task.Host, "")
+	client := NewHTTPClient(task.Host, "", task.ContentType)
 	client.Auth(task.User, task.Password)
 	var totalElapsed int64
 	totalErr := 0

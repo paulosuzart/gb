@@ -21,8 +21,9 @@ var (
 	concurrent   = flag.Int("c", 1, "Number of concurrent users emulated. Default 1.")
 	requests     = flag.Int("n", 1, "Number of total request to be performed. Default 1.")
 	target       = flag.String("t", "http://localhost:8089", "Target to perform the workload.")
-	unamePass    = flag.String("A", "", "auth-name:password")
+	unamePass    = flag.String("A", "", "auth-name:password.")
 	workersAddrs = flag.String("W", "localhost:1977", "The worker Addr")
+	contentType  = flag.String("C", "text/html", "Content Type.")
 )
 
 //Creates a serie of workers regarding the gb mode
@@ -189,6 +190,7 @@ func (m *Master) BenchMark(ctrlChan chan bool) {
 		t.User = u
 		t.Password = p
 		t.Session = m.session
+		t.ContentType = *contentType
 		return
 	}
 

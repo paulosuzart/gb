@@ -15,15 +15,12 @@ import (
 	"os"
 )
 
-type Supervised interface {
-	Shutdown()
-}
 
 var host, _ = os.Hostname()
 var (
-	mode     = flag.String("M", "standalone", "standalone, master, worker")
-	maxTime  = flag.Int64("T", -1, "Max time in milisecs.")
-	hostAddr = flag.String("H", host+":1970", "The master Addr")
+	mode     = flag.String("M", "standalone", "standalone, master, worker.")
+	maxTime  = flag.Int64("T", -1, "Max time in milisecs. master and standalone modes only.")
+	hostAddr = flag.String("H", host+":1970", "The master Addr.")
 )
 
 func init() {
@@ -32,10 +29,11 @@ func init() {
 }
 
 func main() {
+
+	ctrlChan := make(chan bool)
 	switch *mode {
 	case "master", "standalone":
 		m := NewMaster(mode, hostAddr, *maxTime*1000000)
-		ctrlChan := make(chan bool)
 		m.BenchMark(ctrlChan)
 		if *maxTime != -1 {
 			go supervise(m, maxTime)
@@ -44,6 +42,7 @@ func main() {
 		log.Print(m.summary)
 	case "worker":
 		NewLocalWorker(mode, hostAddr).Serve()
+		<-ctrlChan //will wait forever.
 	}
 }
 

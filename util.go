@@ -33,7 +33,12 @@ func Max(x, y int64) int64 {
 	return y
 
 }
-
+//Masters implements this interface.
+//If a timeout occour, the gb will call the
+//shutdown function.
+type Supervised interface {
+	Shutdown()
+}
 //Used by template to generate gb output        
 type StringWritter struct {
 	s string
