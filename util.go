@@ -10,6 +10,7 @@ package main
 
 import (
 	"os"
+	"strings"
 )
 
 //Return the min or y if x is -1
@@ -48,4 +49,18 @@ type StringWritter struct {
 func (self *StringWritter) Write(p []byte) (n int, err os.Error) {
 	self.s += string(p)
 	return len(self.s), nil
+}
+
+func parseKV(param *string, separator, errmsg string) (k, v string, err os.Error) {
+	if *param == "" {
+		return
+	}
+	data := strings.Split(*param, separator, 2)
+
+	if len(data) != 2 {
+		err = os.NewError(errmsg)
+	}
+	k = data[0]
+	v = data[1]
+	return
 }

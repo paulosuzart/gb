@@ -24,6 +24,7 @@ type Task struct {
 	Requests, Id            int
 	MasterAddr, ContentType string
 	Session                 Session
+	Cookie                  Cookie
 }
 
 //Reported by the worker through resultChan
@@ -32,6 +33,7 @@ type WorkSummary struct {
 	SucCount int     //total success
 	Avg      float64 //average response time
 	Max, Min int64   //the slowest requiest
+
 }
 
 
@@ -157,7 +159,7 @@ func (w *LocalWorker) execute(task Task) {
 			log.Printf("Erro Fatal: %v", e)
 		}
 	}()
-	client := NewHTTPClient(task.Host, "", task.ContentType)
+	client := NewHTTPClient(task.Host, "", task.ContentType, task.Cookie)
 	client.Auth(task.User, task.Password)
 	var totalElapsed int64
 	totalErr := 0

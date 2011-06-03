@@ -24,6 +24,7 @@ var (
 	unamePass    = flag.String("A", "", "auth-name:password.")
 	workersAddrs = flag.String("W", "localhost:1977", "The worker Addr")
 	contentType  = flag.String("C", "text/html", "Content Type.")
+	cookieFlag   = flag.String("O", "cookie-name=value", "A Cookie Header to be added to request.")
 )
 
 //Creates a serie of workers regarding the gb mode
@@ -81,6 +82,15 @@ func getCredentials() (u, p string) {
 	return
 }
 
+func getCookie() (cookie *Cookie) {
+
+	n, v, err := parseKV(cookieFlag, "=", "Invalid Cookie")
+	if err != nil {
+		log.Panic(err)
+	}
+	log.Printf("Cookie set: %s=%s", n, v)
+	return &Cookie{n, v}
+}
 
 //Represents this master.
 type Master struct {
@@ -182,6 +192,7 @@ func (m *Master) BenchMark(ctrlChan chan bool) {
 	m.ctrlChan = ctrlChan
 
 	u, p := getCredentials()
+	cookie := getCookie()
 	newTask := func() (t *Task) {
 		t = new(Task)
 		t.Host = *target
@@ -190,6 +201,7 @@ func (m *Master) BenchMark(ctrlChan chan bool) {
 		t.User = u
 		t.Password = p
 		t.Session = m.session
+		t.Cookie = *cookie
 		t.ContentType = *contentType
 		return
 	}

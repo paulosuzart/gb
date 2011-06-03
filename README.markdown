@@ -85,6 +85,7 @@ Available parameters by now are:
  *   `-W workers addresses`: Used for distributed gb. Separated by comma.
  *   `-T max time`: Max time in milisecs for gb execution. 
  *   `-t target`. Target http server. The protocol is mandatory.
+ *   `-O cookie`. cookie-name=value. A Cookie Header to be added to request.
 
 Licensing?
 ==========
@@ -98,6 +99,7 @@ welcome.
  *   Timeout for workers and Master. **DONE!** 
  *   Distribute workers using a worker mode for gb. **DONE!**
  *   Cover HTTP POST
+ *   Support for cookies. **DONE!** Need some improvements.
  *   File upload
  *   Request parameters by csv file
  *   Enable standalone mode again. **DONE!**

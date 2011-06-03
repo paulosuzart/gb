@@ -12,6 +12,9 @@ const (
 	DEFAULT_VERB = "GET"
 )
 
+type Cookie struct {
+	Name, Value string
+}
 
 //Hold information about how to connect and
 //authenticate to the server
@@ -19,11 +22,12 @@ type HTTPClient struct {
 	addr, method, user, password string
 	basicAuth                    bool
 	contentType                  string
+	cookie                       Cookie
 }
 
 //HTTPClient constructor. If method is "", DEFAULT_VERB is
 //then used.
-func NewHTTPClient(addr, method, contentType string) (c *HTTPClient) {
+func NewHTTPClient(addr, method, contentType string, cookie Cookie) (c *HTTPClient) {
 	m := DEFAULT_VERB
 
 	if method != "" {
@@ -36,6 +40,7 @@ func NewHTTPClient(addr, method, contentType string) (c *HTTPClient) {
 		password:    "",
 		contentType: contentType,
 		basicAuth:   false,
+		cookie:      cookie,
 	}
 	return
 }
@@ -64,16 +69,23 @@ func (e Error) String() string {
 	return string(e)
 }
 
-func defaultRequest(url string, headers map[string]string) (req *http.Request, err os.Error) {
+func (self *HTTPClient) defaultRequest() (req *http.Request, err os.Error) {
 	var h http.Header = map[string][]string{}
 	req = new(http.Request)
+
+	headers := map[string]string{"Content-Type": self.contentType}
 	for k, v := range headers {
 		h.Add(k, v)
 	}
 	req.Header = h
 	req.ProtoMajor = 1
 	req.ProtoMinor = 1
-	if req.URL, err = http.ParseURL(url); err != nil {
+	if self.cookie.Name != "" && self.cookie.Value != "" {
+		req.Cookie = make([]*http.Cookie, 1)
+		req.Cookie[0] = &http.Cookie{Name: self.cookie.Name, Value: self.cookie.Value}
+	}
+
+	if req.URL, err = http.ParseURL(self.addr); err != nil {
 		return
 	}
 	return
@@ -92,7 +104,7 @@ func (c *HTTPClient) DoRequest() (response *http.Response, err os.Error) {
 		}
 	}()
 
-	req, err := defaultRequest(c.addr, map[string]string{"Content-Type": c.contentType})
+	req, err := c.defaultRequest()
 	if err != nil {
 		return
 	}
