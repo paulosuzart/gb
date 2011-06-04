@@ -68,18 +68,14 @@ func produceWorkers(master *Master) (workers []Worker) {
 
 }
 //Extracts credentials from command line arguments
-func getCredentials() (u, p string) {
-	if *unamePass == "" {
-		return
-	}
-	authData := strings.Split(*unamePass, ":", 2)
+func getCredentials() (string, string) {
 
-	if len(authData) != 2 {
-		log.Panic("No valid credentials found in -A argument")
+	u, p, err := parseKV(unamePass, ":", "No valid credentials found.")
+
+	if err != nil {
+		log.Panic(err)
 	}
-	u = authData[0]
-	p = authData[1]
-	return
+	return u, p
 }
 
 func getCookie() (cookie *Cookie) {

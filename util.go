@@ -11,6 +11,7 @@ package main
 import (
 	"os"
 	"strings"
+	"time"
 )
 
 //Return the min or y if x is -1
@@ -51,6 +52,8 @@ func (self *StringWritter) Write(p []byte) (n int, err os.Error) {
 	return len(self.s), nil
 }
 
+//Parse any flag represented by
+//a key-value with a separator.
 func parseKV(param *string, separator, errmsg string) (k, v string, err os.Error) {
 	if *param == "" {
 		return
@@ -63,4 +66,10 @@ func parseKV(param *string, separator, errmsg string) (k, v string, err os.Error
 	k = data[0]
 	v = data[1]
 	return
+}
+
+func counting(f func()) int64{
+	start := time.Nanoseconds()
+	f()
+	return time.Nanoseconds() - start
 }
