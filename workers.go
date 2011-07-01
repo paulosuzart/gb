@@ -174,7 +174,6 @@ func (w *LocalWorker) execute(task Task) {
 		if err == nil && resp.StatusCode == http.StatusOK {
 			totalSuc += 1
 			totalElapsed += elapsed
-			log.Print(elapsed)
 			max = Max(max, elapsed)
 			min = Min(min, elapsed)
 		} else {
@@ -192,9 +191,6 @@ func (w *LocalWorker) execute(task Task) {
 	}
 	if totalSuc != 0 {
 		summary.Avg = float64(totalElapsed / int64(totalSuc))
-		log.Print(totalElapsed)
-		log.Print(totalSuc)
-		log.Print(summary.Avg)
 	}
 
 	w.masterChannel <- *summary

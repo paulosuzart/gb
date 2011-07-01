@@ -222,7 +222,6 @@ func (self *Master) summarize() {
 		self.runningTasks -= 1
 
 		avgs += float64(tSummary.Avg)
-		log.Print(avgs)
 		self.summary.TotalSuc += tSummary.SucCount
 		self.summary.TotalErr += tSummary.ErrCount
 
@@ -234,8 +233,6 @@ func (self *Master) summarize() {
 			self.summary.End = time.Nanoseconds()
 			self.summary.Elapsed = (self.summary.End - self.summary.Start)
 			self.summary.Avg = float64(avgs / float64(workers))
-			log.Print("miiiin")
-			log.Print(self.summary.Min)
 			break
 		}
 
