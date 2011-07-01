@@ -78,12 +78,15 @@ func counting(f func()) int64 {
 	return time.Nanoseconds() - start
 }
 
+func nan2mi(value float64) float64 {
+    return value / 1000000
+}
 var CustomFormatter = template.FormatterMap{
 	"f2mi": func(w io.Writer, format string, value ...interface{}) {
-		fmt.Fprint(w, strconv.Ftoa64(value[0].(float64)/1000000, 'f', -1))
+		fmt.Fprint(w, strconv.Ftoa64(nan2mi(value[0].(float64)), 'f', 0))
 	},
 	"i2mi": func(w io.Writer, format string, value ...interface{}) {
-		fmt.Fprintf(w, strconv.Ftoa64(float64(value[0].(int64))/1000000, 'f', -1))
+		fmt.Fprintf(w, strconv.Ftoa64(nan2mi(float64(value[0].(int64))), 'f', 0))
 	},
 }
 
