@@ -83,10 +83,10 @@ func nan2mi(value float64) float64 {
 }
 var CustomFormatter = template.FormatterMap{
 	"f2mi": func(w io.Writer, format string, value ...interface{}) {
-		fmt.Fprint(w, strconv.Ftoa64(nan2mi(value[0].(float64)), 'f', 0))
+		fmt.Fprint(w, strconv.Ftoa64(nan2mi(value[0].(float64)), 'f', -1))
 	},
 	"i2mi": func(w io.Writer, format string, value ...interface{}) {
-		fmt.Fprintf(w, strconv.Ftoa64(nan2mi(float64(value[0].(int64))), 'f', 0))
+		fmt.Fprintf(w, strconv.Ftoa64(nan2mi(float64(value[0].(int64))), 'f', -1))
 	},
 }
 
