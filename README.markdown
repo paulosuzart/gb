@@ -54,12 +54,13 @@ The Master should print something like:
     =========================================================================
             Test Summary (gb. Version: 0.0.2 alpha)
     -------------------------------------------------------------------------                
-    Total Go Benchmark time         | 34.771 milisecs
-    Requests performed              | 20
-    Requests losts                  | 0
-    Average response time           | ~2.2538 milisecs 
-    Max Response Time               | 6.506 milisecs
-    Min Response Time               | 0.799 milisecs
+    Total Go Benchmark Time         | 60.768 milisecs
+    Requests Performed              | 20
+    Requests Lost                   | 0
+    Average Response Time           | 4.7511 milisecs 
+    Max Response Time               | 18.089 milisecs
+    Min Response Time               | 1.528 milisecs
+
 
 At the same time Workers should print:
 
