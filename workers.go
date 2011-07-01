@@ -170,12 +170,13 @@ func (w *LocalWorker) execute(task Task) {
 	for i := 0; i < task.Requests; i++ {
 		start := time.Nanoseconds()
 		resp, err := client.DoRequest()
-		elapsed := (time.Nanoseconds() - start)
+		elapsed := time.Nanoseconds() - start
 		if err == nil && resp.StatusCode == http.StatusOK {
 			totalSuc += 1
 			totalElapsed += elapsed
-			max = Max(max, totalElapsed/1000000)
-			min = Min(min, totalElapsed/1000000)
+			log.Print(elapsed)
+			max = Max(max, elapsed)
+			min = Min(min, elapsed)
 		} else {
 			//Any response other than 200 will be a
 			//failure
@@ -191,6 +192,9 @@ func (w *LocalWorker) execute(task Task) {
 	}
 	if totalSuc != 0 {
 		summary.Avg = float64(totalElapsed / int64(totalSuc))
+		log.Print(totalElapsed)
+		log.Print(totalSuc)
+		log.Print(summary.Avg)
 	}
 
 	w.masterChannel <- *summary

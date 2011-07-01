@@ -52,14 +52,14 @@ The Master should print something like:
     2011/05/18 00:38:19 Tasks distributed. Waiting for summaries...
     2011/05/18 00:38:19 
     =========================================================================
-            Test Summary (gb. Version: 0.0.1 alpha)
+            Test Summary (gb. Version: 0.0.2 alpha)
     -------------------------------------------------------------------------                
-    Total Go Benchmark time         | 46 miliseconds
-    Tequests performed              | 40
-    Average response time           | 1.59855e+06 miliseconds 
-    Max Response Time               | 42 milisecs
-    Min Response Time               | 4 milisecs
+    Total Go Benchmark time         | 34.771 milisecs
+    Requests performed              | 20
     Requests losts                  | 0
+    Average response time           | ~2.2538 milisecs 
+    Max Response Time               | 6.506 milisecs
+    Min Response Time               | 0.799 milisecs
 
 At the same time Workers should print:
 

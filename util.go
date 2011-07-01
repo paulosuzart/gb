@@ -12,6 +12,10 @@ import (
 	"os"
 	"strings"
 	"time"
+	"template"
+	"fmt"
+	"io"
+	"strconv"
 )
 
 //Return the min or y if x is -1
@@ -68,8 +72,29 @@ func parseKV(param *string, separator, errmsg string) (k, v string, err os.Error
 	return
 }
 
-func counting(f func()) int64{
+func counting(f func()) int64 {
 	start := time.Nanoseconds()
 	f()
 	return time.Nanoseconds() - start
 }
+
+var CustomFormatter = template.FormatterMap{
+	"f2mi": func(w io.Writer, format string, value ...interface{}) {
+		fmt.Fprint(w, strconv.Ftoa64(value[0].(float64)/1000000, 'f', -1))
+	},
+	"i2mi": func(w io.Writer, format string, value ...interface{}) {
+		fmt.Fprintf(w, strconv.Ftoa64(float64(value[0].(int64))/1000000, 'f', -1))
+	},
+}
+
+var OutPutTemplate = `
+=========================================================================
+        Test Summary (gb. Version: 0.0.2 alpha)
+-------------------------------------------------------------------------                
+Total Go Benchmark time         | {Elapsed|i2mi} milisecs
+Requests performed              | {TotalSuc}
+Requests losts                  | {TotalErr}
+Average response time           | {Avg|f2mi} milisecs 
+Max Response Time               | {Max|i2mi} milisecs
+Min Response Time               | {Min|i2mi} milisecs
+`

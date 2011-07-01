@@ -110,26 +110,15 @@ type Session struct {
 
 //The resunting summary of a master
 type Summary struct {
-	Start, End, Max    int64
+	Start, End         int64
 	TotalSuc, TotalErr int
-	Min                int64
+	Min, Max           int64
 	Avg                float64
 	Elapsed            int64
 }
 
 func (self *Summary) String() string {
-	s := `
-=========================================================================
-        Test Summary (gb. Version: 0.0.1 alpha)
--------------------------------------------------------------------------                
-Total Go Benchmark time         | {Elapsed} miliseconds
-Requests performed              | {TotalSuc}
-Average response time           | {Avg} miliseconds 
-Max Response Time               | {Max} milisecs
-Min Response Time               | {Min} milisecs
-Requests losts                  | {TotalErr}
-`
-	t := template.MustParse(s, nil)
+	t := template.MustParse(OutPutTemplate, CustomFormatter)
 	sw := new(StringWritter)
 	t.Execute(sw, self)
 	return sw.s
@@ -146,7 +135,7 @@ func (self *Master) Shutdown() {
 	}
 	if self.summary.End == 0 {
 		self.summary.End = time.Nanoseconds()
-		self.summary.Elapsed = (self.summary.End - self.summary.Start) / 1000000
+		self.summary.Elapsed = self.summary.End - self.summary.Start
 	}
 	//log.Print(self.summary)
 }
@@ -176,7 +165,6 @@ func NewMaster(mode, hostAddr *string, timeout int64) *Master {
 	//m.ctrlChan = make(chan bool)
 	m.mode = mode
 	m.summary = &Summary{Min: -1}
-
 	return m
 
 }
@@ -227,11 +215,14 @@ func (m *Master) BenchMark(ctrlChan chan bool) {
 func (self *Master) summarize() {
 	log.Print("Tasks distributed. Waiting for summaries...")
 	self.summary.Start = time.Nanoseconds()
+	workers := self.runningTasks
+	var avgs float64
 	for tSummary := range self.channel {
 		//remove the worker from master
 		self.runningTasks -= 1
 
-		self.summary.Avg = (tSummary.Avg + self.summary.Avg) / 2
+		avgs += float64(tSummary.Avg)
+		log.Print(avgs)
 		self.summary.TotalSuc += tSummary.SucCount
 		self.summary.TotalErr += tSummary.ErrCount
 
@@ -241,7 +232,10 @@ func (self *Master) summarize() {
 		//if no workers left 
 		if self.runningTasks == 0 {
 			self.summary.End = time.Nanoseconds()
-			self.summary.Elapsed = (self.summary.End - self.summary.Start) / 1000000
+			self.summary.Elapsed = (self.summary.End - self.summary.Start)
+			self.summary.Avg = float64(avgs / float64(workers))
+			log.Print("miiiin")
+			log.Print(self.summary.Min)
 			break
 		}
 
