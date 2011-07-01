@@ -91,10 +91,10 @@ var OutPutTemplate = `
 =========================================================================
         Test Summary (gb. Version: 0.0.2 alpha)
 -------------------------------------------------------------------------                
-Total Go Benchmark time         | {Elapsed|i2mi} milisecs
-Requests performed              | {TotalSuc}
-Requests losts                  | {TotalErr}
-Average response time           | {Avg|f2mi} milisecs 
+Total Go Benchmark Time         | {Elapsed|i2mi} milisecs
+Requests Performed              | {TotalSuc}
+Requests Lost                   | {TotalErr}
+Average Response Time           | {Avg|f2mi} milisecs 
 Max Response Time               | {Max|i2mi} milisecs
 Min Response Time               | {Min|i2mi} milisecs
 `
