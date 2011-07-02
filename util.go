@@ -57,7 +57,7 @@ func (self *StringWritter) Write(p []byte) (n int, err os.Error) {
 }
 
 //Parse any flag represented by
-//a key-value with a separator.
+//a key-value with a separator
 func parseKV(param *string, separator, errmsg string) (k, v string, err os.Error) {
 	if *param == "" {
 		return
@@ -78,9 +78,15 @@ func counting(f func()) int64 {
 	return time.Nanoseconds() - start
 }
 
+//Just converts a nanosecond value to a milisecond value.
 func nan2mi(value float64) float64 {
     return value / 1000000
 }
+
+//Custom formats used in the output template.
+//f2mi means float64 to miliseconds and i2mi
+//means int64 to miliseconds, returning a float64
+//representing it
 var CustomFormatter = template.FormatterMap{
 	"f2mi": func(w io.Writer, format string, value ...interface{}) {
 		fmt.Fprint(w, strconv.Ftoa64(nan2mi(value[0].(float64)), 'f', -1))
@@ -90,6 +96,7 @@ var CustomFormatter = template.FormatterMap{
 	},
 }
 
+//Template used in console output.
 var OutPutTemplate = `
 =========================================================================
         Test Summary (gb. Version: 0.0.2 alpha)

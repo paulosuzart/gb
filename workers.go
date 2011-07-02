@@ -81,7 +81,7 @@ func (self *LocalWorker) SetMasterChan(c chan WorkSummary) {
 func NewLocalWorker(mode, hostAddr *string) (w *LocalWorker) {
 	defer func() {
 		if e := recover(); e != nil {
-			log.Fatalf("Panic!!!!", e)
+			log.Fatalf("Panic starting the worker!!!!", e)
 		}
 	}()
 	w = new(LocalWorker)
@@ -96,6 +96,10 @@ func NewLocalWorker(mode, hostAddr *string) (w *LocalWorker) {
 	return
 }
 
+//Keeps a sort of cached channels.
+//A worker will often submiti many tasks that can
+//be received by a single imported channel
+//representing such a master.
 var _sessions map[int64]chan WorkSummary = make(map[int64]chan WorkSummary)
 var mu *sync.RWMutex = new(sync.RWMutex)
 
@@ -118,7 +122,6 @@ func importMasterChan(t Task) (c chan WorkSummary) {
 	go func() {
 		err := <-imp.Errors()
 		log.Print(err)
-		log.Print("Recuperado")
 	}()
 
 	_sessions[t.Session.Id] = c
@@ -126,6 +129,8 @@ func importMasterChan(t Task) (c chan WorkSummary) {
 	return
 }
 
+//A cache watcher function cleans up the cache after
+//2 times the session length
 func cacheWatcher(session Session) {
 	time.Sleep(session.Timeout * 2)
 	mu.Lock()
