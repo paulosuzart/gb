@@ -99,9 +99,10 @@ TODO
 welcome.
  *   Timeout for workers and Master. **DONE!** 
  *   Distribute workers using a worker mode for gb. **DONE!**
- *   Cover HTTP POST
+ *   Cover HTTP POST. **DONE!** Now the usage of `-C` sets the method to POST.
  *   Support for cookies. **DONE!** Need some improvements.
- *   File upload
+ *   File upload.
+ *   POST data file.
  *   Request parameters by csv file
  *   Enable standalone mode again. **DONE!**
  *   Improve netchan.Importer usage in worker mode. **DONE! Now workers keeps the channel open for masters no more than -M. after -M the worker closes the Test session (imported channel) by its own, avoiding holding the dead channel forever.**

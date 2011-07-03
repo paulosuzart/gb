@@ -164,7 +164,7 @@ func (w *LocalWorker) execute(task Task) {
 			log.Printf("Erro Fatal: %v", e)
 		}
 	}()
-	client := NewHTTPClient(task.Host, "", task.ContentType, task.Cookie)
+	client := NewHTTPClient(task.Host, task.ContentType, task.Cookie)
 	client.Auth(task.User, task.Password)
 	var totalElapsed int64
 	totalErr := 0

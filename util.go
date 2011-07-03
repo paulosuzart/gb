@@ -80,7 +80,7 @@ func counting(f func()) int64 {
 
 //Just converts a nanosecond value to a milisecond value.
 func nan2mi(value float64) float64 {
-    return value / 1000000
+	return value / 1000000
 }
 
 //Custom formats used in the output template.

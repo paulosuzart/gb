@@ -9,7 +9,9 @@ import (
 )
 
 const (
-	DEFAULT_VERB = "GET"
+	GET          = "GET"
+	POST         = "POST"
+	DEFAULT_VERB = GET
 )
 
 type Cookie struct {
@@ -27,12 +29,14 @@ type HTTPClient struct {
 
 //HTTPClient constructor. If method is "", DEFAULT_VERB is
 //then used.
-func NewHTTPClient(addr, method, contentType string, cookie Cookie) (c *HTTPClient) {
-	m := DEFAULT_VERB
-
-	if method != "" {
-		m = method
+func NewHTTPClient(addr, contentType string, cookie Cookie) (c *HTTPClient) {
+	var m string
+	if contentType != "" {
+		m = POST
+	} else {
+		m = DEFAULT_VERB
 	}
+
 	c = &HTTPClient{
 		addr:        addr,
 		method:      m,
@@ -72,12 +76,15 @@ func (e Error) String() string {
 func (self *HTTPClient) defaultRequest() (req *http.Request, err os.Error) {
 	var h http.Header = map[string][]string{}
 	req = new(http.Request)
-
-	headers := map[string]string{"Content-Type": self.contentType}
-	for k, v := range headers {
-		h.Add(k, v)
+	req.Method = self.method
+	if self.contentType != "" {
+		headers := map[string]string{"Content-Type": self.contentType}
+		for k, v := range headers {
+			h.Add(k, v)
+		}
+		req.Header = h
 	}
-	req.Header = h
+
 	req.ProtoMajor = 1
 	req.ProtoMinor = 1
 	if self.cookie.Name != "" && self.cookie.Value != "" {
