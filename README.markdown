@@ -15,6 +15,8 @@ Note that distributed gb is optional. You can run it in standalone mode.
 Using it
 ========
 
+**Note**: compatible with r57
+
 Before, clone the project and build it:
     
     git clone git@github.com:paulosuzart/gb.git
@@ -68,7 +70,6 @@ At the same time Workers should print:
     2011/05/18 00:38:14 Waiting for tasks...
     2011/05/18 00:38:19 Task Received from localhost:1970
     2011/05/18 00:38:19 Summary sent to localhost:1970
-    2011/05/18 00:38:19 netchan import: header:EOF
 
 `netchan import: header:EOF` is a Go log.   
 
