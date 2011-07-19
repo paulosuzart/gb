@@ -110,7 +110,7 @@ func (c *HTTPClient) DoRequest() (response *http.Response, err os.Error) {
 			log.Print(e)
 		}
 	}()
-
+	//creates a default request
 	req, err := c.defaultRequest()
 	if err != nil {
 		return
