@@ -28,19 +28,6 @@ var (
 func init() {
 	flag.Parse()
 	log.Printf("Starting in %s mode - %s", *mode, *hostAddr)
-
-	sess := &msgs.Session {
-		Id: proto.Int64(211231),
-		Timeout: proto.Int64(1231111),
-	}
-	data, _ := proto.Marshal(sess)
-	println("#####DATA")
-	println(data)
-	newSess := &msgs.Session{}
-	proto.Unmarshal(data, newSess)
-	println("#####ID")
-	print(proto.GetInt64(newSess.Id))
-	
 }
 
 func main() {

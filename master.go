@@ -15,6 +15,8 @@ import (
 	"flag"
 	"time"
 	"template"
+	"github/paulosuzart/gb/msgs"
+	"goprotobuf.googlecode.com/hg/proto"
 )
 
 var (
@@ -26,6 +28,51 @@ var (
 	contentType  = flag.String("C", "text/html", "Content Type.")
 	cookieFlag   = flag.String("O", "cookie-name=value", "A Cookie Header to be added to request.")
 )
+
+
+
+//Every master has its own session.
+//A sessions has an Id, that is simply the current nanoseconds.
+//It helps workers kill (for worker mode) any dead channel
+//imported from finished masters.
+type Session struct {
+	Id, Timeout int64
+}
+
+type SessionPB struct {
+	Data []byte
+}
+
+
+func (self *SessionPB) UnWrap() *Session {
+	newSess := &msgs.Session{}
+	proto.Unmarshal(self.Data, newSess)
+	return &Session{
+				Id : proto.GetInt64(newSess.Id), 
+				Timeout : proto.GetInt64(newSess.Timeout),
+			}
+}
+
+//Represents this master.
+type Master struct {
+	channel      chan WorkSummary //workers reports by WorkSummary
+	ctrlChan     chan bool
+	runningTasks int
+	mode         *string
+	exptr        *netchan.Exporter
+	summary      *Summary //Master summary 
+	done         bool
+	session      SessionPB
+}
+
+//The resunting summary of a master
+type Summary struct {
+	Start, End         int64
+	TotalSuc, TotalErr int
+	Min, Max           int64
+	Avg                float64
+	Elapsed            int64
+}
 
 //Creates a serie of workers regarding the gb mode
 //for the given master
@@ -88,35 +135,6 @@ func getCookie() (cookie *Cookie) {
 	return &Cookie{n, v}
 }
 
-//Represents this master.
-type Master struct {
-	channel      chan WorkSummary //workers reports by WorkSummary
-	ctrlChan     chan bool
-	runningTasks int
-	mode         *string
-	exptr        *netchan.Exporter
-	summary      *Summary //Master summary 
-	done         bool
-	session      Session
-}
-
-//Every master has its own session.
-//A sessions has an Id, that is simply the current nanoseconds.
-//It helps workers kill (for worker mode) any dead channel
-//imported from finished masters.
-type Session struct {
-	Id, Timeout int64
-}
-
-//The resunting summary of a master
-type Summary struct {
-	Start, End         int64
-	TotalSuc, TotalErr int
-	Min, Max           int64
-	Avg                float64
-	Elapsed            int64
-}
-
 func (self *Summary) String() string {
 	t := template.MustParse(OutPutTemplate, CustomFormatter)
 	sw := new(StringWritter)
@@ -140,9 +158,14 @@ func (self *Master) Shutdown() {
 	//log.Print(self.summary)
 }
 
-func newSession(timeout int64) Session {
-	s := &Session{Id: time.Nanoseconds(), Timeout: timeout}
-	return *s
+func newSessionPB(timeout int64) SessionPB {
+	sess := &msgs.Session{
+		Id : proto.Int64(time.Nanoseconds()),
+		Timeout: proto.Int64(timeout),
+	}
+	data, _ := proto.Marshal(sess)
+	sessPb := &SessionPB{Data : data}
+	return *sessPb
 }
 
 //New Master returned. If mode is master, attempts to export the
@@ -152,9 +175,8 @@ func NewMaster(mode, hostAddr *string, timeout int64) *Master {
 	log.Print("Starting Master...")
 	masterChan := make(chan WorkSummary, 10)
 	m := new(Master)
-	m.session = newSession(timeout)
+	m.session = newSessionPB(timeout)
 
-	log.Printf("TEST SESSION %v", m.session)
 	if *mode == "master" {
 		m.exptr = netchan.NewExporter()
 		m.exptr.Export("masterChannel", masterChan, netchan.Recv)

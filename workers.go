@@ -23,7 +23,7 @@ type Task struct {
 	Host, User, Password    string
 	Requests, Id            int
 	MasterAddr, ContentType string
-	Session                 Session
+	Session                 SessionPB
 	Cookie                  Cookie
 }
 
@@ -107,8 +107,9 @@ var mu *sync.RWMutex = new(sync.RWMutex)
 func importMasterChan(t Task) (c chan WorkSummary) {
 	mu.Lock()
 	defer mu.Unlock()
-	if c, present := _sessions[t.Session.Id]; present {
-		log.Printf("Cached Session %v", t.Session.Id)
+	sess := t.Session.UnWrap()
+	if c, present := _sessions[sess.Id]; present {
+		log.Printf("Cached Session %v", sess.Id)
 		return c
 	}
 
@@ -124,8 +125,8 @@ func importMasterChan(t Task) (c chan WorkSummary) {
 		log.Print(err)
 	}()
 
-	_sessions[t.Session.Id] = c
-	go cacheWatcher(t.Session)
+	_sessions[sess.Id] = c
+	go cacheWatcher(*sess)
 	return
 }
 
@@ -184,6 +185,7 @@ func (w *LocalWorker) execute(task Task) {
 		} else {
 			//Any response other than 200 will be a
 			//failure
+			log.Printf("Server status: %s", resp.StatusCode)
 			totalErr += 1
 		}
 	}
