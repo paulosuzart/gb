@@ -1,0 +1,6 @@
+package msgs;
+
+message Session {
+	required int64 id = 1;
+	required int64 timeout = 2;
+}
