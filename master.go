@@ -41,16 +41,21 @@ type Session struct {
 
 type SessionPB struct {
 	Data []byte
+	unwrapped *Session
 }
 
 
 func (self *SessionPB) UnWrap() *Session {
+	if (self.unwrapped != nil){
+		return self.unwrapped
+	}
 	newSess := &msgs.Session{}
 	proto.Unmarshal(self.Data, newSess)
-	return &Session{
+	self.unwrapped = &Session{
 				Id : proto.GetInt64(newSess.Id), 
 				Timeout : proto.GetInt64(newSess.Timeout),
 			}
+	return self.unwrapped
 }
 
 //Represents this master.

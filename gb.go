@@ -13,8 +13,6 @@ import (
 	"log"
 	"time"
 	"os"
-	"github/paulosuzart/gb/msgs"
-	"goprotobuf.googlecode.com/hg/proto"
 )
 
 
