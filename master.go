@@ -164,7 +164,7 @@ func NewMaster(mode, hostAddr *string, timeout int64) *Master {
 	m.channel = masterChan
 	//m.ctrlChan = make(chan bool)
 	m.mode = mode
-	m.summary = &Summary{}
+	m.summary = &Summary{Min : -1}
 	return m
 
 }
@@ -230,6 +230,9 @@ func (self *Master) summarize() {
 		self.summary.Min = Min(self.summary.Min, tSummary.Min)
 		//if no workers left 
 		if self.runningTasks == 0 {
+			if self.summary.Min == -1 {
+				self.summary.Min = 0
+			}
 			self.summary.End = time.Nanoseconds()
 			self.summary.Elapsed = (self.summary.End - self.summary.Start)
 			self.summary.Avg = float64(avgs / float64(workers))
