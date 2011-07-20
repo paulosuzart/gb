@@ -48,13 +48,14 @@ The Master should print something like:
 
     2011/05/18 00:38:19 Starting in master mode
     2011/05/18 00:38:19 Starting Master...
+	2011/05/18 00:38:19 TEST SESSION {1311125723245295000 700000000}
     2011/05/18 00:38:19 Setting up a ProxyWorker for localhost:1978
     2011/05/18 00:38:19 Setting up a ProxyWorker for localhost:1979
     2011/05/18 00:38:19 2 ProxyWorker(s) may be used by gb
     2011/05/18 00:38:19 Tasks distributed. Waiting for summaries...
     2011/05/18 00:38:19 
     =========================================================================
-            Test Summary (gb. Version: 0.0.2 alpha)
+            Test Summary (gb. Version: 0.0.2 beta)
     -------------------------------------------------------------------------                
     Total Go Benchmark Time         | 60.768 milisecs
     Requests Performed              | 20
