@@ -58,9 +58,9 @@ func produceWorkers(master *Master) (workers []Worker) {
 	}
 
 	switch *master.mode {
-	case "standalone":
+	case STANDALONE:
 		createLocalWorkers()
-	case "master":
+	case MASTER:
 		createProxyWorkers()
 	}
 	log.Printf("%v %vWorker(s) may be used by gb", len(workers), wtype)
@@ -130,7 +130,7 @@ func (self *Master) Shutdown() {
 		return
 	}
 	self.done = true
-	if *self.mode == "master" {
+	if *self.mode == MASTER {
 		self.exptr.Hangup("masterChannel")
 	}
 	if self.summary.End == 0 {
@@ -155,7 +155,7 @@ func NewMaster(mode, hostAddr *string, timeout int64) *Master {
 	m.session = newSession(timeout)
 
 	log.Printf("TEST SESSION %v", m.session)
-	if *mode == "master" {
+	if *mode == MASTER {
 		m.exptr = netchan.NewExporter()
 		m.exptr.Export("masterChannel", masterChan, netchan.Recv)
 		m.exptr.ListenAndServe("tcp", *hostAddr)

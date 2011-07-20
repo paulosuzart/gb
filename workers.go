@@ -88,7 +88,7 @@ func NewLocalWorker(mode, hostAddr *string) (w *LocalWorker) {
 	w.channel = make(chan Task, 10)
 	w.mode = mode
 	//exports the channels
-	if *mode == "worker" {
+	if *mode == WORKER {
 		e := netchan.NewExporter()
 		e.Export("workerChannel", w.channel, netchan.Recv)
 		e.ListenAndServe("tcp", *hostAddr)
@@ -145,7 +145,7 @@ func (self *LocalWorker) Serve() {
 	log.Print("Waiting for tasks...")
 	for {
 		task := <-self.channel
-		if *self.mode == "worker" {
+		if *self.mode == WORKER {
 			self.SetMasterChan(importMasterChan(task))
 		}
 

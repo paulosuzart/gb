@@ -18,6 +18,12 @@ import (
 	"strconv"
 )
 
+const (
+	WORKER string = "worker"
+	STANDALONE string = "standalone"
+	MASTER string = "master"
+)
+
 //Return the min or y if x is -1
 func Min(x, y int64) int64 {
 	if x == -1 {
@@ -99,7 +105,7 @@ var CustomFormatter = template.FormatterMap{
 //Template used in console output.
 var OutPutTemplate = `
 =========================================================================
-        Test Summary (gb. Version: 0.0.2 alpha)
+        Test Summary (gb. Version: 0.0.2 beta)
 -------------------------------------------------------------------------                
 Total Go Benchmark Time         | {Elapsed|i2mi} milisecs
 Requests Performed              | {TotalSuc}
