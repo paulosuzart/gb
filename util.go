@@ -19,9 +19,9 @@ import (
 )
 
 const (
-	WORKER string = "worker"
+	WORKER     string = "worker"
 	STANDALONE string = "standalone"
-	MASTER string = "master"
+	MASTER     string = "master"
 )
 
 //Return the min or y if x is -1

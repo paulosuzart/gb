@@ -32,7 +32,7 @@ func main() {
 
 	ctrlChan := make(chan bool)
 	switch *mode {
-	case "master", "standalone":
+	case MASTER, STANDALONE:
 		m := NewMaster(mode, hostAddr, *maxTime*1000000)
 		m.BenchMark(ctrlChan)
 		if *maxTime != -1 {
@@ -40,7 +40,7 @@ func main() {
 		}
 		<-ctrlChan
 		log.Print(m.summary)
-	case "worker":
+	case WORKER:
 		NewLocalWorker(mode, hostAddr).Serve()
 		<-ctrlChan //will wait forever.
 	}

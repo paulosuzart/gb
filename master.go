@@ -164,7 +164,7 @@ func NewMaster(mode, hostAddr *string, timeout int64) *Master {
 	m.channel = masterChan
 	//m.ctrlChan = make(chan bool)
 	m.mode = mode
-	m.summary = &Summary{Min : -1}
+	m.summary = &Summary{Min: -1}
 	return m
 
 }
