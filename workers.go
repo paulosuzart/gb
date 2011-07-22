@@ -114,7 +114,7 @@ func importMasterChan(t Task) (c chan WorkSummary) {
 
 	imp, err := netchan.Import("tcp", t.MasterAddr)
 	if err != nil {
-		log.Print("Failed to create importer for %v", t.MasterAddr)
+		log.Printf("Failed to create importer for %v", t.MasterAddr)
 	}
 
 	c = make(chan WorkSummary, 10)
@@ -144,7 +144,7 @@ func cacheWatcher(session Session) {
 func (self *LocalWorker) Serve() {
 	log.Print("Waiting for tasks...")
 	for {
-		task := <-self.channel
+		task := <-self.channel	 
 		if *self.mode == WORKER {
 			self.SetMasterChan(importMasterChan(task))
 		}
