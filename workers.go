@@ -144,7 +144,7 @@ func cacheWatcher(session Session) {
 func (self *LocalWorker) Serve() {
 	log.Print("Waiting for tasks...")
 	for {
-		task := <-self.channel	 
+		task := <-self.channel
 		if *self.mode == WORKER {
 			self.SetMasterChan(importMasterChan(task))
 		}
