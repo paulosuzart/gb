@@ -175,8 +175,9 @@ func (w *LocalWorker) execute(task Task) {
 	for i := 0; i < task.Requests; i++ {
 		start := time.Nanoseconds()
 		resp, err := client.DoRequest()
+		
 		elapsed := time.Nanoseconds() - start
-		if err == nil && resp.StatusCode == http.StatusOK {
+		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
 			totalSuc += 1
 			totalElapsed += elapsed
 			max = Max(max, elapsed)

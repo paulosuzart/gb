@@ -1,0 +1,6 @@
+make: Nothing to be done for `all'.
+starting worker at localhost:1978
+starting worker at localhost:1979
+ 3118 ttys001    0:00.00 ./gb -M worker -H localhost:1978
+ 3120 ttys001    0:00.00 ./gb -M worker -H localhost:1979
+ 3122 ttys001    0:00.00 grep gb

@@ -49,6 +49,7 @@ The Master should print something like:
     2011/05/18 00:38:19 Starting in master mode
     2011/05/18 00:38:19 Starting Master...
 	2011/05/18 00:38:19 TEST SESSION {1311125723245295000 700000000}
+	2011/05/18 00:38:19 2 ProxyWorker(s) may be used by gb
     2011/05/18 00:38:19 Setting up a ProxyWorker for localhost:1978
     2011/05/18 00:38:19 Setting up a ProxyWorker for localhost:1979
     2011/05/18 00:38:19 2 ProxyWorker(s) may be used by gb
@@ -60,6 +61,7 @@ The Master should print something like:
     Total Go Benchmark Time         | 60.768 milisecs
     Requests Performed              | 20
     Requests Lost                   | 0
+    Target supports (reqs/s)        | ~272
     Average Response Time           | 4.7511 milisecs 
     Max Response Time               | 18.089 milisecs
     Min Response Time               | 1.528 milisecs
@@ -99,6 +101,7 @@ TODO
 ====
  *   Websocket to report in real time the status of request. A browser will be
 welcome.
+ *   Test coverage using a go test server to ensure all the options provided by GB.
  *   Timeout for workers and Master. **DONE!** 
  *   Distribute workers using a worker mode for gb. **DONE!**
  *   Cover HTTP POST. **DONE!** Now the usage of `-C` sets the method to POST.

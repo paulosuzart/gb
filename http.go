@@ -82,8 +82,10 @@ func (self *HTTPClient) defaultRequest() (req *http.Request, err os.Error) {
 		for k, v := range headers {
 			h.Add(k, v)
 		}
-		req.Header = h
 	}
+	//Request should have a Header, otherwise the
+	//transport will not work.
+	req.Header = h
 
 	req.ProtoMajor = 1
 	req.ProtoMinor = 1
@@ -125,7 +127,7 @@ func (c *HTTPClient) DoRequest() (response *http.Response, err os.Error) {
 
 		req.Header.Add("Authorization", authInfo(c.user, c.password))
 
-		_, err = gbTransport.RoundTrip(req) //c.client.Do(req)
+		_, err = gbTransport.RoundTrip(req)
 
 		if err != nil {
 			log.Println(err)

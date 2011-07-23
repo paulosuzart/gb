@@ -110,6 +110,7 @@ var OutPutTemplate = `
 Total Go Benchmark Time         | {Elapsed|i2mi} milisecs
 Requests Performed              | {TotalSuc}
 Requests Lost                   | {TotalErr}
+Target supports (reqs/s)        | ~{RequestsPerSecond}
 Average Response Time           | {Avg|f2mi} milisecs 
 Max Response Time               | {Max|i2mi} milisecs
 Min Response Time               | {Min|i2mi} milisecs

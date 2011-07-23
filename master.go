@@ -23,8 +23,8 @@ var (
 	target       = flag.String("t", "http://localhost:8089", "Target to perform the workload.")
 	unamePass    = flag.String("A", "", "auth-name:password.")
 	workersAddrs = flag.String("W", "localhost:1977", "The worker Addr")
-	contentType  = flag.String("C", "text/html", "Content Type.")
-	cookieFlag   = flag.String("O", "cookie-name=value", "A Cookie Header to be added to request.")
+	contentType  = flag.String("C", "", "Content Type.")
+	cookieFlag   = flag.String("O", "", "A Cookie Header to be added to request.")
 )
 
 //Creates a serie of workers regarding the gb mode
@@ -84,7 +84,6 @@ func getCookie() (cookie *Cookie) {
 	if err != nil {
 		log.Panic(err)
 	}
-	log.Printf("Cookie set: %s=%s", n, v)
 	return &Cookie{n, v}
 }
 
@@ -115,6 +114,7 @@ type Summary struct {
 	Min, Max           int64
 	Avg                float64
 	Elapsed            int64
+	RequestsPerSecond  int64
 }
 
 func (self *Summary) String() string {
@@ -137,7 +137,6 @@ func (self *Master) Shutdown() {
 		self.summary.End = time.Nanoseconds()
 		self.summary.Elapsed = self.summary.End - self.summary.Start
 	}
-	//log.Print(self.summary)
 }
 
 func newSession(timeout int64) Session {
@@ -162,7 +161,6 @@ func NewMaster(mode, hostAddr *string, timeout int64) *Master {
 	}
 
 	m.channel = masterChan
-	//m.ctrlChan = make(chan bool)
 	m.mode = mode
 	m.summary = &Summary{Min: -1}
 	return m
@@ -236,6 +234,7 @@ func (self *Master) summarize() {
 			self.summary.End = time.Nanoseconds()
 			self.summary.Elapsed = (self.summary.End - self.summary.Start)
 			self.summary.Avg = float64(avgs / float64(workers))
+			self.summary.RequestsPerSecond = int64(self.summary.TotalSuc * 1000) / (self.summary.Elapsed / 1000000)
 			break
 		}
 
