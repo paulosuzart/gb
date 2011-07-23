@@ -104,17 +104,18 @@ var _sessions map[int64]chan WorkSummary = make(map[int64]chan WorkSummary)
 var mu *sync.RWMutex = new(sync.RWMutex)
 
 //Helper function to import the Master channel from masterAddr
-func importMasterChan(t Task) (c chan WorkSummary) {
+func importMasterChan(t Task) (c chan WorkSummary, err os.Error) {
 	mu.Lock()
 	defer mu.Unlock()
 	if c, present := _sessions[t.Session.Id]; present {
 		log.Printf("Cached Session %v", t.Session.Id)
-		return c
+		return c, nil
 	}
 
 	imp, err := netchan.Import("tcp", t.MasterAddr)
 	if err != nil {
 		log.Printf("Failed to create importer for %v", t.MasterAddr)
+		return nil, err
 	}
 
 	c = make(chan WorkSummary, 10)
@@ -126,7 +127,7 @@ func importMasterChan(t Task) (c chan WorkSummary) {
 
 	_sessions[t.Session.Id] = c
 	go cacheWatcher(t.Session)
-	return
+	return c, nil
 }
 
 //A cache watcher function cleans up the cache after
@@ -146,7 +147,12 @@ func (self *LocalWorker) Serve() {
 	for {
 		task := <-self.channel
 		if *self.mode == WORKER {
-			self.SetMasterChan(importMasterChan(task))
+			if mchan, err := importMasterChan(task); err != nil {
+				log.Printf("Unable to Contact Master %s. Ignoring task.", task.MasterAddr)
+				continue
+			} else {
+				self.SetMasterChan(mchan)
+			}
 		}
 
 		log.Printf("Task Received from %v", task.MasterAddr)
