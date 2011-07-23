@@ -24,12 +24,12 @@ var (
 )
 
 func init() {
-	log.SetFlags(log.Lshortfile)
 	flag.Parse()
 	log.Printf("Starting in %s mode - %s", *mode, *hostAddr)
 }
 
 func main() {
+	log.SetPrefix("[" + *mode + "@" + *hostAddr +"]")
 
 	ctrlChan := make(chan bool)
 	switch *mode {
