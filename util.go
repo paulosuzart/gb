@@ -68,7 +68,7 @@ func parseKV(param *string, separator, errmsg string) (k, v string, err os.Error
 	if *param == "" {
 		return
 	}
-	data := strings.Split(*param, separator, 2)
+	data := strings.SplitN(*param, separator, 2)
 
 	if len(data) != 2 {
 		err = os.NewError(errmsg)
