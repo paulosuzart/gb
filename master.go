@@ -14,7 +14,7 @@ import (
 	"netchan"
 	"flag"
 	"time"
-	"template"
+	"old/template"
 )
 
 var (
