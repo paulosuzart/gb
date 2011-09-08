@@ -14,7 +14,7 @@ import (
 	"netchan"
 	"flag"
 	"time"
-	"template"
+	"old/template"
 )
 
 var (
@@ -44,7 +44,7 @@ func produceWorkers(master *Master) (workers []Worker) {
 	}
 	createProxyWorkers := func() {
 		wtype = "Proxy"
-		addrs := strings.Split(*workersAddrs, ",", -1)
+		addrs := strings.SplitN(*workersAddrs, ",", -1)
 		workers = make([]Worker, len(addrs))
 		for i, addr := range addrs {
 			//Try to connect
