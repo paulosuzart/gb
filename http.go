@@ -1,11 +1,11 @@
 package main
 
-
 import (
 	"http"
 	"os"
 	"log"
 	"encoding/base64"
+	"url"
 )
 
 const (
@@ -90,11 +90,10 @@ func (self *HTTPClient) defaultRequest() (req *http.Request, err os.Error) {
 	req.ProtoMajor = 1
 	req.ProtoMinor = 1
 	if self.cookie.Name != "" && self.cookie.Value != "" {
-		req.Cookie = make([]*http.Cookie, 1)
-		req.Cookie[0] = &http.Cookie{Name: self.cookie.Name, Value: self.cookie.Value}
+		req.AddCookie(&http.Cookie{Name: self.cookie.Name, Value: self.cookie.Value})
 	}
 
-	if req.URL, err = http.ParseURL(self.addr); err != nil {
+	if req.URL, err = url.Parse(self.addr); err != nil {
 		return
 	}
 	return
