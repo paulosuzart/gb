@@ -15,8 +15,6 @@ Note that distributed gb is optional. You can run it in standalone mode.
 Using it
 ========
 
-**Note**: compatible with r60 (thanks to [andrewzeneski](https://github.com/andrewzeneski)).
-
 Before, clone the project and build it:
     
     git clone git@github.com:paulosuzart/gb.git
@@ -111,3 +109,13 @@ welcome.
  *   Request parameters by csv file
  *   Enable standalone mode again. **DONE!**
  *   Improve netchan.Importer usage in worker mode. **DONE! Now workers keeps the channel open for masters no more than -M. after -M the worker closes the Test session (imported channel) by its own, avoiding holding the dead channel forever.**
+
+ CONTRIBUTING
+ ============
+ You can contribute with your code at any time. Just make your pull request like:
+
+
+   - [andrewzeneski](https://github.com/andrewzeneski) made gb compatible with go0.6
+   - [mattn](https://github.com/mattn) made changes necessary to make it compatible with go1.3 and the absence of `netchan` package in the starndard lib.
+and .
+
