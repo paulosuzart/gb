@@ -9,12 +9,12 @@
 package main
 
 import (
-	"http"
+	"net/http"
 	"log"
-	"netchan"
-	"os"
 	"sync"
 	"time"
+
+	"code.google.com/p/go.exp/old/netchan"
 )
 
 //Represents a set of request to be performed
@@ -99,7 +99,7 @@ var _sessions map[int64]chan WorkSummary = make(map[int64]chan WorkSummary)
 var mu *sync.RWMutex = new(sync.RWMutex)
 
 //Helper function to import the Master channel from masterAddr
-func importMasterChan(t Task) (c chan WorkSummary, err os.Error) {
+func importMasterChan(t Task) (c chan WorkSummary, err error) {
 	mu.Lock()
 	defer mu.Unlock()
 	if c, present := _sessions[t.Session.Id]; present {
@@ -128,10 +128,10 @@ func importMasterChan(t Task) (c chan WorkSummary, err os.Error) {
 //A cache watcher function cleans up the cache after
 //2 times the session length
 func cacheWatcher(session Session) {
-	time.Sleep(session.Timeout * 2)
+	time.Sleep(time.Duration(session.Timeout * 2))
 	mu.Lock()
 	log.Printf("Cleanning up Session %v", session.Id)
-	_sessions[session.Id] = _sessions[session.Id], false
+	delete(_sessions, session.Id)
 	mu.Unlock()
 }
 
@@ -175,10 +175,10 @@ func (w *LocalWorker) execute(task Task) {
 	var min int64 = -1
 	//perform n times the request
 	for i := 0; i < task.Requests; i++ {
-		start := time.Nanoseconds()
+		start := time.Now().UnixNano()
 		resp, err := client.DoRequest()
 
-		elapsed := time.Nanoseconds() - start
+		elapsed := time.Now().UnixNano() - start
 		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
 			totalSuc += 1
 			totalElapsed += elapsed
@@ -214,7 +214,7 @@ type ProxyWorker struct {
 
 //Creates a new Proxy importing 'workerChannel' from Worker running
 //on workerAddr
-func NewProxyWorker(workerAddr string) (p *ProxyWorker, err os.Error) {
+func NewProxyWorker(workerAddr string) (p *ProxyWorker, err error) {
 	log.Printf("Setting up a ProxyWorker for %s", workerAddr)
 	p = new(ProxyWorker)
 

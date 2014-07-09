@@ -9,11 +9,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"io"
-	"old/template"
-	"os"
-	"strconv"
+	"text/template"
 	"strings"
 	"time"
 )
@@ -59,21 +57,21 @@ type StringWritter struct {
 }
 
 //Writes the template as string
-func (self *StringWritter) Write(p []byte) (n int, err os.Error) {
+func (self *StringWritter) Write(p []byte) (n int, err error) {
 	self.s += string(p)
 	return len(self.s), nil
 }
 
 //Parse any flag represented by
 //a key-value with a separator
-func parseKV(param *string, separator, errmsg string) (k, v string, err os.Error) {
+func parseKV(param *string, separator, errmsg string) (k, v string, err error) {
 	if *param == "" {
 		return
 	}
 	data := strings.SplitN(*param, separator, 2)
 
 	if len(data) != 2 {
-		err = os.NewError(errmsg)
+		err = errors.New(errmsg)
 	}
 	k = data[0]
 	v = data[1]
@@ -81,9 +79,9 @@ func parseKV(param *string, separator, errmsg string) (k, v string, err os.Error
 }
 
 func counting(f func()) int64 {
-	start := time.Nanoseconds()
+	start := time.Now().UnixNano()
 	f()
-	return time.Nanoseconds() - start
+	return time.Now().UnixNano() - start
 }
 
 //Just converts a nanosecond value to a milisecond value.
@@ -95,12 +93,12 @@ func nan2mi(value float64) float64 {
 //f2mi means float64 to miliseconds and i2mi
 //means int64 to miliseconds, returning a float64
 //representing it
-var CustomFormatter = template.FormatterMap{
-	"f2mi": func(w io.Writer, format string, value ...interface{}) {
-		fmt.Fprint(w, strconv.Ftoa64(nan2mi(value[0].(float64)), 'f', -1))
+var CustomFormatter = template.FuncMap{
+	"f2mi": func(value ...interface{}) string {
+		return fmt.Sprint(nan2mi(value[0].(float64)), 'f', -1)
 	},
-	"i2mi": func(w io.Writer, format string, value ...interface{}) {
-		fmt.Fprintf(w, strconv.Ftoa64(nan2mi(float64(value[0].(int64))), 'f', -1))
+	"i2mi": func(value ...interface{}) string {
+		return fmt.Sprint(nan2mi(float64(value[0].(int64))), 'f', -1)
 	},
 }
 

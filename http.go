@@ -2,10 +2,9 @@ package main
 
 import (
 	"encoding/base64"
-	"http"
+	"net/http"
 	"log"
-	"os"
-	"url"
+	"net/url"
 )
 
 const (
@@ -73,7 +72,7 @@ func (e Error) String() string {
 	return string(e)
 }
 
-func (self *HTTPClient) defaultRequest() (req *http.Request, err os.Error) {
+func (self *HTTPClient) defaultRequest() (req *http.Request, err error) {
 	var h http.Header = map[string][]string{}
 	req = new(http.Request)
 	req.Method = self.method
@@ -105,7 +104,7 @@ var gbTransport *http.Transport = &http.Transport{DisableKeepAlives: true}
 //Perform the HTTP method against the target host.
 //Auth is handled if Auth was previously invoked to set
 //user info.
-func (c *HTTPClient) DoRequest() (response *http.Response, err os.Error) {
+func (c *HTTPClient) DoRequest() (response *http.Response, err error) {
 	//Recover if things goes really bad
 	defer func() {
 		if e := recover(); e != nil {
@@ -120,7 +119,7 @@ func (c *HTTPClient) DoRequest() (response *http.Response, err os.Error) {
 	response, err = gbTransport.RoundTrip(req)
 
 	if err != nil {
-		log.Printf("Error performing Request: %v", err.String())
+		log.Printf("Error performing Request: %v", err)
 		return nil, err
 	}
 	if response.StatusCode == http.StatusUnauthorized && c.basicAuth {

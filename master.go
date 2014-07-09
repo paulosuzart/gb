@@ -11,10 +11,11 @@ package main
 import (
 	"flag"
 	"log"
-	"netchan"
-	"old/template"
+	"text/template"
 	"strings"
 	"time"
+
+	"code.google.com/p/go.exp/old/netchan"
 )
 
 var (
@@ -119,7 +120,8 @@ type Summary struct {
 }
 
 func (self *Summary) String() string {
-	t := template.MustParse(OutPutTemplate, CustomFormatter)
+	t := template.Must(template.New("gb").Parse(OutPutTemplate))
+	t.Funcs(CustomFormatter)
 	sw := new(StringWritter)
 	t.Execute(sw, self)
 	return sw.s
@@ -135,13 +137,13 @@ func (self *Master) Shutdown() {
 		self.exptr.Hangup("masterChannel")
 	}
 	if self.summary.End == 0 {
-		self.summary.End = time.Nanoseconds()
+		self.summary.End = time.Now().UnixNano()
 		self.summary.Elapsed = self.summary.End - self.summary.Start
 	}
 }
 
 func newSession(timeout int64) Session {
-	s := &Session{Id: time.Nanoseconds(), Timeout: timeout}
+	s := &Session{Id: time.Now().UnixNano(), Timeout: timeout}
 	return *s
 }
 
@@ -214,7 +216,7 @@ func (m *Master) BenchMark(ctrlChan chan bool) {
 //whole request.
 func (self *Master) summarize() {
 	log.Print("Tasks distributed. Waiting for summaries...")
-	self.summary.Start = time.Nanoseconds()
+	self.summary.Start = time.Now().UnixNano()
 	workers := self.runningTasks
 	var avgs float64
 	for tSummary := range self.channel {
@@ -233,7 +235,7 @@ func (self *Master) summarize() {
 			if self.summary.Min == -1 {
 				self.summary.Min = 0
 			}
-			self.summary.End = time.Nanoseconds()
+			self.summary.End = time.Now().UnixNano()
 			self.summary.Elapsed = (self.summary.End - self.summary.Start)
 			self.summary.Avg = float64(avgs / float64(workers))
 			self.summary.RequestsPerSecond = int64(self.summary.TotalSuc*1000) / (self.summary.Elapsed / 1000000)

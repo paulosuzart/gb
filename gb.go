@@ -47,7 +47,7 @@ func main() {
 }
 
 func supervise(supervised Supervised, maxTime *int64) {
-	time.Sleep(*maxTime * 1000000)
+	time.Sleep(time.Duration(*maxTime) * time.Millisecond)
 	log.Print("WARN! gb stopped due to timeout. Work lost.")
 	supervised.Shutdown()
 	os.Exit(1)
