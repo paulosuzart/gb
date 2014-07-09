@@ -9,16 +9,16 @@
 package main
 
 import (
+	"http"
 	"log"
 	"netchan"
-	"time"
 	"os"
 	"sync"
-	"http"
+	"time"
 )
 
 //Represents a set of request to be performed
-//against Task.Host        
+//against Task.Host
 type Task struct {
 	Host, User, Password    string
 	Requests, Id            int
@@ -36,12 +36,10 @@ type WorkSummary struct {
 
 }
 
-
-//Put t to w.Channel()        
+//Put t to w.Channel()
 func (self *Task) Send(w Worker) {
 	w.Channel() <- *self
 }
-
 
 //The worker interface
 type Worker interface {
@@ -51,7 +49,6 @@ type Worker interface {
 	// Should be called in a go routine
 	Serve()
 }
-
 
 //A local workers is used in standalone mode
 //as well as in worker mode.
@@ -64,7 +61,6 @@ type LocalWorker struct {
 	//ctrlChan      chan bool
 }
 
-
 //Worker interface implemented:w
 func (self *LocalWorker) Channel() chan Task {
 	return self.channel
@@ -74,10 +70,9 @@ func (self *LocalWorker) SetMasterChan(c chan WorkSummary) {
 	self.masterChannel = c
 }
 
-
 //Creates a new LocalWorker. If export is true, than
 //the LocalWorker exports its input channel in the network address
-//provided by workerAddr        
+//provided by workerAddr
 func NewLocalWorker(mode, hostAddr *string) (w *LocalWorker) {
 	defer func() {
 		if e := recover(); e != nil {
@@ -139,9 +134,10 @@ func cacheWatcher(session Session) {
 	_sessions[session.Id] = _sessions[session.Id], false
 	mu.Unlock()
 }
+
 //Listen to the worker channel. Every Task is executed by a different
 //go routine.
-//Waits until a task come fom w.channel        
+//Waits until a task come fom w.channel
 func (self *LocalWorker) Serve() {
 	log.Print("Waiting for tasks...")
 	for {
@@ -161,9 +157,9 @@ func (self *LocalWorker) Serve() {
 }
 
 //Excecutes a task and send back a response to
-//w.masterChannel. masterChannel can be set by 
+//w.masterChannel. masterChannel can be set by
 //w.SetMasterChan in standalone mode or
-//dynamically imported in worker mode        
+//dynamically imported in worker mode
 func (w *LocalWorker) execute(task Task) {
 	defer func() {
 		if e := recover(); e != nil {
@@ -181,7 +177,7 @@ func (w *LocalWorker) execute(task Task) {
 	for i := 0; i < task.Requests; i++ {
 		start := time.Nanoseconds()
 		resp, err := client.DoRequest()
-		
+
 		elapsed := time.Nanoseconds() - start
 		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
 			totalSuc += 1
@@ -208,6 +204,7 @@ func (w *LocalWorker) execute(task Task) {
 	w.masterChannel <- *summary
 	log.Printf("Summary sent to %s", task.MasterAddr)
 }
+
 //Holds a reference to an imported channel
 //from the actual worker
 type ProxyWorker struct {
@@ -216,7 +213,7 @@ type ProxyWorker struct {
 }
 
 //Creates a new Proxy importing 'workerChannel' from Worker running
-//on workerAddr        
+//on workerAddr
 func NewProxyWorker(workerAddr string) (p *ProxyWorker, err os.Error) {
 	log.Printf("Setting up a ProxyWorker for %s", workerAddr)
 	p = new(ProxyWorker)
@@ -235,7 +232,7 @@ func (self *ProxyWorker) Channel() chan Task {
 }
 
 //Import the worker channel represented by this
-//Proxy. Better if executed in go Serve()         
+//Proxy. Better if executed in go Serve()
 func (self *ProxyWorker) Serve() {
 
 	self.channel = make(chan Task)

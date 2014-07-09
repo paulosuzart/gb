@@ -9,12 +9,12 @@
 package main
 
 import (
-	"log"
-	"strings"
-	"netchan"
 	"flag"
-	"time"
+	"log"
+	"netchan"
 	"old/template"
+	"strings"
+	"time"
 )
 
 var (
@@ -67,6 +67,7 @@ func produceWorkers(master *Master) (workers []Worker) {
 	return
 
 }
+
 //Extracts credentials from command line arguments
 func getCredentials() (string, string) {
 
@@ -94,7 +95,7 @@ type Master struct {
 	runningTasks int
 	mode         *string
 	exptr        *netchan.Exporter
-	summary      *Summary //Master summary 
+	summary      *Summary //Master summary
 	done         bool
 	session      Session
 }
@@ -166,6 +167,7 @@ func NewMaster(mode, hostAddr *string, timeout int64) *Master {
 	return m
 
 }
+
 //For each client passed by arg, a new worker is created.
 //Workers pointers are stored in m.workers to check the end of
 //work for each one.
@@ -199,7 +201,7 @@ func (m *Master) BenchMark(ctrlChan chan bool) {
 		}
 	}
 	//The remaining work goes for the
-	//first worker        
+	//first worker
 	for r := 0; r < remain; r++ {
 		m.runningTasks += 1
 		newTask().Send(workers[0])
@@ -226,7 +228,7 @@ func (self *Master) summarize() {
 		self.summary.Max = Max(self.summary.Max, tSummary.Max)
 
 		self.summary.Min = Min(self.summary.Min, tSummary.Min)
-		//if no workers left 
+		//if no workers left
 		if self.runningTasks == 0 {
 			if self.summary.Min == -1 {
 				self.summary.Min = 0
@@ -234,7 +236,7 @@ func (self *Master) summarize() {
 			self.summary.End = time.Nanoseconds()
 			self.summary.Elapsed = (self.summary.End - self.summary.Start)
 			self.summary.Avg = float64(avgs / float64(workers))
-			self.summary.RequestsPerSecond = int64(self.summary.TotalSuc * 1000) / (self.summary.Elapsed / 1000000)
+			self.summary.RequestsPerSecond = int64(self.summary.TotalSuc*1000) / (self.summary.Elapsed / 1000000)
 			break
 		}
 

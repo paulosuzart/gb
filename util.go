@@ -9,13 +9,13 @@
 package main
 
 import (
-	"os"
-	"strings"
-	"time"
-	"old/template"
 	"fmt"
 	"io"
+	"old/template"
+	"os"
 	"strconv"
+	"strings"
+	"time"
 )
 
 const (
@@ -45,13 +45,15 @@ func Max(x, y int64) int64 {
 	return y
 
 }
+
 //Masters implements this interface.
 //If a timeout occour, the gb will call the
 //shutdown function.
 type Supervised interface {
 	Shutdown()
 }
-//Used by template to generate gb output        
+
+//Used by template to generate gb output
 type StringWritter struct {
 	s string
 }
@@ -87,7 +89,7 @@ func counting(f func()) int64 {
 //Just converts a nanosecond value to a milisecond value.
 func nan2mi(value float64) float64 {
 	return value * 0.000001
- }
+}
 
 //Custom formats used in the output template.
 //f2mi means float64 to miliseconds and i2mi

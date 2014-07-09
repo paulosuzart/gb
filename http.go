@@ -1,10 +1,10 @@
 package main
 
 import (
-	"http"
-	"os"
-	"log"
 	"encoding/base64"
+	"http"
+	"log"
+	"os"
 	"url"
 )
 
@@ -101,6 +101,7 @@ func (self *HTTPClient) defaultRequest() (req *http.Request, err os.Error) {
 }
 
 var gbTransport *http.Transport = &http.Transport{DisableKeepAlives: true}
+
 //Perform the HTTP method against the target host.
 //Auth is handled if Auth was previously invoked to set
 //user info.

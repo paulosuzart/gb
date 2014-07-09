@@ -11,10 +11,9 @@ package main
 import (
 	"flag"
 	"log"
-	"time"
 	"os"
+	"time"
 )
-
 
 var host, _ = os.Hostname()
 var (
@@ -29,7 +28,7 @@ func init() {
 }
 
 func main() {
-	log.SetPrefix("[" + *mode + "@" + *hostAddr +"]")
+	log.SetPrefix("[" + *mode + "@" + *hostAddr + "]")
 
 	ctrlChan := make(chan bool)
 	switch *mode {
